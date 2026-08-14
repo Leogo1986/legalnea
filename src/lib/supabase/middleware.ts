@@ -7,6 +7,13 @@ const RUTAS_ABOGADO = ["/abogado"];
 const RUTAS_CLIENTE = ["/cliente"];
 const RUTAS_PROTEGIDAS = [...RUTAS_ADMIN, ...RUTAS_ABOGADO, ...RUTAS_CLIENTE];
 
+// "/abogado" (panel protegido) no debe capturar "/abogados/nuevo" (alta
+// pública) ni "/cliente" capturar "/clientes/nuevo" — hace falta un límite
+// de segmento, no un simple startsWith.
+function coincideRuta(pathname: string, prefijo: string) {
+  return pathname === prefijo || pathname.startsWith(`${prefijo}/`);
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -34,7 +41,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const esRutaProtegida = RUTAS_PROTEGIDAS.some((r) => pathname.startsWith(r));
+  const esRutaProtegida = RUTAS_PROTEGIDAS.some((r) => coincideRuta(pathname, r));
 
   if (!esRutaProtegida) {
     return supabaseResponse;
@@ -56,9 +63,9 @@ export async function updateSession(request: NextRequest) {
   const rol = perfil?.rol;
 
   const sinPermiso =
-    (RUTAS_ADMIN.some((r) => pathname.startsWith(r)) && rol !== "admin") ||
-    (RUTAS_ABOGADO.some((r) => pathname.startsWith(r)) && rol !== "abogado") ||
-    (RUTAS_CLIENTE.some((r) => pathname.startsWith(r)) && rol !== "cliente");
+    (RUTAS_ADMIN.some((r) => coincideRuta(pathname, r)) && rol !== "admin") ||
+    (RUTAS_ABOGADO.some((r) => coincideRuta(pathname, r)) && rol !== "abogado") ||
+    (RUTAS_CLIENTE.some((r) => coincideRuta(pathname, r)) && rol !== "cliente");
 
   if (sinPermiso) {
     const url = request.nextUrl.clone();
