@@ -32,12 +32,6 @@ begin
 end;
 $$ language plpgsql;
 
--- Helper: rol del usuario autenticado actual (evita recursión RLS)
-create or replace function auth_rol()
-returns rol as $$
-  select rol from perfiles where id = auth.uid();
-$$ language sql stable security definer set search_path = public;
-
 -- ============================================================
 -- TABLA: perfiles (1:1 con auth.users)
 -- ============================================================
@@ -55,6 +49,14 @@ create table perfiles (
 create trigger trg_perfiles_updated_at
   before update on perfiles
   for each row execute function set_updated_at();
+
+-- Helper: rol del usuario autenticado actual (evita recursión RLS).
+-- Debe ir DESPUÉS de crear `perfiles` (language sql valida el cuerpo
+-- contra el catálogo al crear la función).
+create or replace function auth_rol()
+returns rol as $$
+  select rol from perfiles where id = auth.uid();
+$$ language sql stable security definer set search_path = public;
 
 -- ============================================================
 -- TABLA: especialidades
@@ -94,11 +96,12 @@ create table abogados (
   fecha_aprobacion timestamptz,
   fecha_alta timestamptz not null default now(),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  -- Anti autoaprobación: toda fila creada por el público debe entrar pendiente y sin usuario asociado
-  constraint chk_abogado_alta_publica check (
-    (user_id is null and estado = 'pendiente') or (user_id is not null)
-  )
+  updated_at timestamptz not null default now()
+  -- Anti autoaprobación: la garantiza la policy RLS `abogados_insert_publico`
+  -- (scoped al rol `anon`, exige estado='pendiente' y user_id is null). Un
+  -- CHECK a nivel tabla duplicaba esa regla pero para TODAS las filas,
+  -- bloqueando estados legítimos sin user_id (rechazado, o aprobado en el
+  -- seed de demo sin cuenta de Auth real) — por eso no está acá.
 );
 
 create index idx_abogados_estado on abogados(estado);
