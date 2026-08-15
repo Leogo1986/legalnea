@@ -56,6 +56,7 @@ export async function crearAbogado(
     .single();
 
   if (errorInsert || !abogado) {
+    console.error("[crearAbogado] insert abogados falló:", errorInsert);
     const esDuplicado = errorInsert?.code === "23505";
     return {
       success: false,
@@ -75,6 +76,7 @@ export async function crearAbogado(
     );
 
   if (errorEspecialidades) {
+    console.error("[crearAbogado] insert abogado_especialidades falló:", errorEspecialidades);
     return {
       success: false,
       error: "No pudimos guardar tus áreas de actuación. Probá de nuevo.",

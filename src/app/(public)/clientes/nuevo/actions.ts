@@ -65,6 +65,7 @@ export async function crearSolicitudCliente(
     .single();
 
   if (errorCliente || !cliente) {
+    console.error("[crearSolicitudCliente] insert clientes falló:", errorCliente);
     return {
       success: false,
       error: "No pudimos guardar tus datos. Probá de nuevo en un momento.",
@@ -85,6 +86,7 @@ export async function crearSolicitudCliente(
     .single();
 
   if (errorSolicitud || !solicitud) {
+    console.error("[crearSolicitudCliente] insert solicitudes falló:", errorSolicitud);
     return {
       success: false,
       error: "No pudimos registrar tu solicitud. Probá de nuevo en un momento.",
