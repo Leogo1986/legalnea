@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   clienteAltaSchema,
   validarArchivoAdjunto,
@@ -48,7 +48,11 @@ export async function crearSolicitudCliente(
   }
 
   const datos = parsed.data;
-  const supabase = await createClient();
+  // Mismo motivo que en abogados/nuevo/actions.ts: el INSERT...RETURNING de
+  // un cliente/solicitud recién creada no pasa la policy de SELECT como rol
+  // anon (correcto: nadie más debe poder leerla sin sesión), así que se usa
+  // el cliente admin acá — la validación real ya la hizo Zod arriba.
+  const supabase = createAdminClient();
 
   const { data: cliente, error: errorCliente } = await supabase
     .from("clientes")

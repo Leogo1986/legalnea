@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { abogadoAltaCompletoSchema } from "@/lib/validation/abogado.schema";
 import { generarPdfDeclaracionJurada } from "@/lib/pdf/declaracion-jurada-pdf";
 import { enviarAltaAbogadoConfirmacion } from "@/lib/email/enviar";
@@ -32,10 +32,13 @@ export async function crearAbogado(
   }
 
   const datos = parsed.data;
-  const supabase = await createClient();
-
-  // Alta pública anónima: la RLS exige estado='pendiente' y user_id=null
-  // (anti-autoaprobación), ver migración 0001_schema.sql.
+  // Server Action ya validada con Zod arriba y con estado/user_id hardcodeados
+  // acá mismo (nunca vienen del cliente) — el gatekeeper real es este código,
+  // no la RLS. Se usa el cliente admin porque un INSERT ... RETURNING de un
+  // abogado 'pendiente' sin user_id no pasa ninguna policy de SELECT como
+  // rol anon (a propósito: no hay que exponer pendientes), y Postgres
+  // reporta esa combinación como si fallara el propio INSERT.
+  const supabase = createAdminClient();
   const { data: abogado, error: errorInsert } = await supabase
     .from("abogados")
     .insert({
