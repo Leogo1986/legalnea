@@ -24,6 +24,7 @@ export async function crearAbogado(
 ): Promise<CrearAbogadoResult> {
   const parsed = abogadoAltaCompletoSchema.safeParse(input);
   if (!parsed.success) {
+    console.error("[crearAbogado] validación falló:", JSON.stringify(parsed.error.issues));
     return {
       success: false,
       error: "Revisá los datos del formulario: hay campos inválidos.",
