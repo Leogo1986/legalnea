@@ -1,6 +1,7 @@
 "use client";
 
-import { Download } from "lucide-react";
+import Link from "next/link";
+import { Download, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,9 +79,19 @@ export function ListaSolicitudesAbogado({ solicitudes }: { solicitudes: Solicitu
                 ))}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              Recibida el {formatearFecha(s.created_at)}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                Recibida el {formatearFecha(s.created_at)}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                render={<Link href={`/abogado/solicitudes/${s.id}`} />}
+              >
+                <Eye className="size-3.5" />
+                Ver caso
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ))}

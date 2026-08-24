@@ -11,7 +11,8 @@ export type EstadoSolicitud =
   | "en_curso"
   | "resuelta"
   | "derivada"
-  | "cerrada";
+  | "cerrada"
+  | "anulada";
 export type Prioridad = "baja" | "media" | "alta" | "urgente";
 
 export type Perfil = {
@@ -112,6 +113,16 @@ export type Mensaje = {
   autor_rol: Rol;
   contenido: string;
   leido: boolean;
+  created_at: string;
+}
+
+export type SolicitudEvento = {
+  id: string;
+  solicitud_id: string;
+  autor_id: string | null;
+  autor_rol: Rol;
+  etapa: string;
+  nota: string | null;
   created_at: string;
 }
 
@@ -259,6 +270,20 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "mensajes_solicitud_id_fkey";
+            columns: ["solicitud_id"];
+            isOneToOne: false;
+            referencedRelation: "solicitudes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      solicitud_eventos: {
+        Row: SolicitudEvento;
+        Insert: Partial<SolicitudEvento>;
+        Update: Partial<SolicitudEvento>;
+        Relationships: [
+          {
+            foreignKeyName: "solicitud_eventos_solicitud_id_fkey";
             columns: ["solicitud_id"];
             isOneToOne: false;
             referencedRelation: "solicitudes";

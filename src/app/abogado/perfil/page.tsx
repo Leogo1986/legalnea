@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { PerfilAbogadoForm } from "@/components/abogado/perfil-abogado-form";
+import { CambiarPasswordAbogadoForm } from "@/components/abogado/cambiar-password-abogado-form";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Mi perfil — Abogado" };
@@ -42,6 +43,7 @@ export default async function PerfilAbogadoPage() {
       </Card>
 
       <PerfilAbogadoForm abogado={abogado} />
+      <CambiarPasswordAbogadoForm />
     </div>
   );
 }

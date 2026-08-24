@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { TimelineCaso } from "@/components/casos/timeline-caso";
 import { cn } from "@/lib/utils";
 import type { EstadoSolicitud, Rol } from "@/types/database";
 import {
@@ -37,6 +38,7 @@ type Solicitud = {
   abogadoNombre: string | null;
   adjuntos: { id: string; nombre: string; ruta: string }[];
   mensajes: { id: string; contenido: string; autorRol: Rol; createdAt: string }[];
+  eventos: { id: string; etapa: string; nota: string | null; autorRol: Rol; createdAt: string }[];
 };
 
 function formatearFecha(fecha: string) {
@@ -167,6 +169,13 @@ export function SolicitudCliente({ solicitud }: { solicitud: Solicitud }) {
             )}
           </label>
         </div>
+
+        {solicitud.eventos.length > 0 && (
+          <div className="grid gap-2 rounded-lg border p-3">
+            <p className="text-xs font-medium text-muted-foreground">Línea de tiempo del trámite</p>
+            <TimelineCaso eventos={solicitud.eventos} soloLectura />
+          </div>
+        )}
 
         <div className="grid gap-2 rounded-lg border p-3">
           <p className="text-xs font-medium text-muted-foreground">Mensajes</p>

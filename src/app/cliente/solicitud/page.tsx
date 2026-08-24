@@ -23,7 +23,7 @@ export default async function SolicitudClientePage() {
   const { data } = await supabase
     .from("solicitudes")
     .select(
-      "id, motivo_consulta, estado, created_at, abogados(nombre_completo), solicitud_adjuntos(id, nombre_archivo, ruta_storage), mensajes(id, contenido, autor_rol, created_at)"
+      "id, motivo_consulta, estado, created_at, abogados(nombre_completo), solicitud_adjuntos(id, nombre_archivo, ruta_storage), mensajes(id, contenido, autor_rol, created_at), solicitud_eventos(id, etapa, nota, autor_rol, created_at)"
     )
     .eq("cliente_id", cliente.id)
     .order("created_at", { ascending: false });
@@ -49,6 +49,16 @@ export default async function SolicitudClientePage() {
           contenido: m.contenido,
           autorRol: m.autor_rol,
           createdAt: m.created_at,
+        })),
+      eventos: (Array.isArray(s.solicitud_eventos) ? s.solicitud_eventos : [])
+        .slice()
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        .map((e) => ({
+          id: e.id,
+          etapa: e.etapa,
+          nota: e.nota,
+          autorRol: e.autor_rol,
+          createdAt: e.created_at,
         })),
     };
   });

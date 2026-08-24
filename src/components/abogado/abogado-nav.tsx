@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Scale, ScrollText, UserRound } from "lucide-react";
+import { LayoutDashboard, LogOut, Scale, ScrollText, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { SITE_NAME } from "@/lib/constants";
 
 const LINKS = [
-  { href: "/abogado/perfil", label: "Mi perfil", icon: UserRound },
+  { href: "/abogado/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/abogado/solicitudes", label: "Solicitudes", icon: ScrollText },
+  { href: "/abogado/perfil", label: "Mi perfil", icon: UserRound },
 ];
 
 export function AbogadoNav({ nombre }: { nombre: string }) {
