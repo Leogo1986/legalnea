@@ -10,11 +10,17 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComboboxProvincia } from "@/components/shared/combobox-provincia";
-import { abogadoAltaSchema } from "@/lib/validation/abogado.schema";
+import {
+  abogadoDatosSchema,
+  validarAlMenosUnaMatricula,
+  REFINEMENT_MATRICULA,
+} from "@/lib/validation/abogado.schema";
 import { actualizarPerfilAbogado } from "@/app/abogado/perfil/actions";
 import { z } from "zod";
 
-const editarPerfilSchema = abogadoAltaSchema.omit({ especialidad_ids: true, email: true });
+const editarPerfilSchema = abogadoDatosSchema
+  .omit({ especialidad_ids: true, email: true })
+  .refine(validarAlMenosUnaMatricula, REFINEMENT_MATRICULA);
 
 type EditarPerfilInput = z.infer<typeof editarPerfilSchema>;
 

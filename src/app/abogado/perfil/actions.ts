@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
-import { abogadoAltaSchema } from "@/lib/validation/abogado.schema";
+import {
+  abogadoDatosSchema,
+  validarAlMenosUnaMatricula,
+  REFINEMENT_MATRICULA,
+} from "@/lib/validation/abogado.schema";
 
 type ResultadoAccion = { success: true } | { success: false; error: string };
 
@@ -13,7 +17,11 @@ type ResultadoAccion = { success: true } | { success: false; error: string };
 // `auth.users.email` — decisión de diseño no cubierta explícitamente en el
 // prompt, tomada por ser la opción más simple y segura. `especialidad_ids`
 // también queda fuera del MVP de edición de perfil (fijo tras la aprobación).
-const editarPerfilSchema = abogadoAltaSchema.omit({ especialidad_ids: true, email: true });
+// (Se parte de `abogadoDatosSchema`, no de `abogadoAltaSchema`: Zod no deja
+// `.omit()` sobre un schema ya refinado.)
+const editarPerfilSchema = abogadoDatosSchema
+  .omit({ especialidad_ids: true, email: true })
+  .refine(validarAlMenosUnaMatricula, REFINEMENT_MATRICULA);
 
 export async function actualizarPerfilAbogado(input: unknown): Promise<ResultadoAccion> {
   const { user } = await requireRole("abogado");

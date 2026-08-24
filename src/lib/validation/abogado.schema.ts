@@ -17,35 +17,50 @@ export const emailSchema = z
   .toLowerCase()
   .email("Ingresá un email válido");
 
-// Paso 1: datos del formulario público de alta de abogado (/abogados/nuevo)
-export const abogadoAltaSchema = z
-  .object({
-    nombre_completo: z
-      .string()
-      .trim()
-      .min(3, "Ingresá tu nombre y apellido completo")
-      .max(150),
-    telefono: telefonoArgentinoSchema,
-    direccion: z.string().trim().min(3, "Ingresá tu domicilio").max(255),
-    provincia: z.string().trim().min(2, "Seleccioná o ingresá tu provincia"),
-    localidad: z.string().trim().min(2, "Ingresá tu localidad"),
-    codigo_postal: z.string().trim().max(15).optional().or(z.literal("")),
-    matricula_federal: z.string().trim().max(100).optional().or(z.literal("")),
-    matricula_provincial: z.string().trim().max(100).optional().or(z.literal("")),
-    email: emailSchema,
-    especialidad_ids: z
-      .array(z.string().uuid())
-      .min(1, "Elegí al menos un área de actuación"),
-  })
-  .refine(
-    (data) =>
-      (data.matricula_federal && data.matricula_federal.length > 0) ||
-      (data.matricula_provincial && data.matricula_provincial.length > 0),
-    {
-      message: "Ingresá al menos una matrícula (federal o provincial)",
-      path: ["matricula_federal"],
-    }
+// Objeto base SIN refinar. Zod no permite `.omit()` sobre un schema que ya
+// tiene `.refine()` ("`.omit()` cannot be used on object schemas containing
+// refinements") — por eso el objeto base se exporta aparte, para que
+// `perfil-abogado-form.tsx`/`perfil/actions.ts` puedan omitir campos y
+// refinar de nuevo, en vez de partir de `abogadoAltaSchema` ya refinado.
+export const abogadoDatosSchema = z.object({
+  nombre_completo: z
+    .string()
+    .trim()
+    .min(3, "Ingresá tu nombre y apellido completo")
+    .max(150),
+  telefono: telefonoArgentinoSchema,
+  direccion: z.string().trim().min(3, "Ingresá tu domicilio").max(255),
+  provincia: z.string().trim().min(2, "Seleccioná o ingresá tu provincia"),
+  localidad: z.string().trim().min(2, "Ingresá tu localidad"),
+  codigo_postal: z.string().trim().max(15).optional().or(z.literal("")),
+  matricula_federal: z.string().trim().max(100).optional().or(z.literal("")),
+  matricula_provincial: z.string().trim().max(100).optional().or(z.literal("")),
+  email: emailSchema,
+  especialidad_ids: z
+    .array(z.string().uuid())
+    .min(1, "Elegí al menos un área de actuación"),
+});
+
+export function validarAlMenosUnaMatricula(data: {
+  matricula_federal?: string;
+  matricula_provincial?: string;
+}) {
+  return (
+    (data.matricula_federal && data.matricula_federal.length > 0) ||
+    (data.matricula_provincial && data.matricula_provincial.length > 0)
   );
+}
+
+export const REFINEMENT_MATRICULA = {
+  message: "Ingresá al menos una matrícula (federal o provincial)",
+  path: ["matricula_federal"],
+};
+
+// Paso 1: datos del formulario público de alta de abogado (/abogados/nuevo)
+export const abogadoAltaSchema = abogadoDatosSchema.refine(
+  validarAlMenosUnaMatricula,
+  REFINEMENT_MATRICULA
+);
 
 export type AbogadoAltaInput = z.infer<typeof abogadoAltaSchema>;
 
