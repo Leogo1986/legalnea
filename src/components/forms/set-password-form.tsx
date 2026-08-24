@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { KeyRound, Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,9 +84,8 @@ export function SetPasswordForm({
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4" noValidate>
           <div className="grid gap-1.5">
             <Label htmlFor="password">Nueva contraseña</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="new-password"
               aria-invalid={!!errors.password}
               {...register("password")}
@@ -97,9 +96,8 @@ export function SetPasswordForm({
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="confirmar_password">Confirmar contraseña</Label>
-            <Input
+            <PasswordInput
               id="confirmar_password"
-              type="password"
               autoComplete="new-password"
               aria-invalid={!!errors.confirmar_password}
               {...register("confirmar_password")}

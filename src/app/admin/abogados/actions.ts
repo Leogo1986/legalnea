@@ -37,6 +37,14 @@ export async function aprobarAbogado(abogadoId: string): Promise<ResultadoAccion
 
     authUserId = invitado.user.id;
 
+    // generateLink({type:"invite"}) crea la cuenta sin confirmar: el email
+    // recién queda confirmado cuando el usuario clickea el link del mail de
+    // invitación. Si el envío de mail falla o no está configurado (Resend),
+    // la cuenta queda confirmable para siempre y el abogado no puede loguear
+    // ni con la password que le resetee el admin. La aprobación del admin ya
+    // es el gate real acá, así que confirmamos el email nosotros mismos.
+    await admin.auth.admin.updateUserById(authUserId, { email_confirm: true });
+
     await admin.from("perfiles").upsert({
       id: authUserId,
       rol: "abogado",
