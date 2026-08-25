@@ -160,10 +160,12 @@ export function AbogadoAltaForm({ especialidades }: { especialidades: Especialid
   return (
     <>
       <Card className="mx-auto max-w-2xl">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Scale className="size-5 text-primary" />
-            <CardTitle>Sumate a la red PROBONO</CardTitle>
+        <CardHeader className="border-b bg-gradient-to-br from-primary/8 to-transparent">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+              <Scale className="size-5" />
+            </span>
+            <CardTitle className="text-xl">Sumate a la red PROBONO</CardTitle>
           </div>
           <CardDescription>
             Completá tus datos. No hace falta tener cuenta creada — la vas a

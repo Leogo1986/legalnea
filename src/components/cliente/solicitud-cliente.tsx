@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimelineCaso } from "@/components/casos/timeline-caso";
 import { cn } from "@/lib/utils";
 import type { EstadoSolicitud, Rol } from "@/types/database";
-import { agregarAdjuntoPropio, obtenerUrlFirmadaCliente } from "@/app/cliente/solicitud/actions";
+import { agregarAdjuntoPropio, obtenerUrlFirmadaCliente } from "@/app/cliente/solicitudes/actions";
+import { ESTADO_LABEL_CLIENTE } from "@/components/cliente/tarjeta-solicitud-cliente";
 
 const PASOS: { estado: EstadoSolicitud; label: string }[] = [
   { estado: "nueva", label: "Recibida" },
@@ -42,7 +43,11 @@ export function SolicitudCliente({ solicitud }: { solicitud: Solicitud }) {
   const [subiendoArchivo, setSubiendoArchivo] = React.useState(false);
   const inputArchivoRef = React.useRef<HTMLInputElement>(null);
 
-  const esTerminalAlterno = solicitud.estado === "derivada" || solicitud.estado === "cerrada";
+  const esTerminalAlterno =
+    solicitud.estado === "derivada" ||
+    solicitud.estado === "cerrada" ||
+    solicitud.estado === "rechazada" ||
+    solicitud.estado === "anulada";
   const pasoActual = PASOS.findIndex((p) => p.estado === solicitud.estado);
 
   async function subirArchivo(file: File) {
@@ -71,10 +76,12 @@ export function SolicitudCliente({ solicitud }: { solicitud: Solicitud }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="border-b bg-gradient-to-br from-primary/8 to-transparent">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle>Solicitud del {formatearFecha(solicitud.created_at)}</CardTitle>
-          {esTerminalAlterno && <Badge variant="outline">{solicitud.estado}</Badge>}
+          <CardTitle className="text-lg">Solicitud del {formatearFecha(solicitud.created_at)}</CardTitle>
+          {esTerminalAlterno && (
+            <Badge variant="outline">{ESTADO_LABEL_CLIENTE[solicitud.estado]}</Badge>
+          )}
         </div>
       </CardHeader>
       <CardContent className="grid gap-5">

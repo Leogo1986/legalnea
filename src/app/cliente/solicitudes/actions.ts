@@ -52,7 +52,7 @@ export async function agregarAdjuntoPropio(formData: FormData): Promise<Resultad
 
   if (errorInsert) return { success: false, error: "No pudimos guardar el adjunto." };
 
-  revalidatePath("/cliente/solicitud");
+  revalidatePath(`/cliente/solicitudes/${solicitudId}`);
   return { success: true };
 }
 
@@ -77,7 +77,7 @@ export async function enviarMensajeCliente(
 
   if (error) return { success: false, error: "No pudimos enviar el mensaje." };
 
-  revalidatePath("/cliente/solicitud");
+  revalidatePath(`/cliente/solicitudes/${solicitudId}`);
   return { success: true };
 }
 

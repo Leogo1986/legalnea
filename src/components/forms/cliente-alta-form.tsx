@@ -90,8 +90,10 @@ export function ClienteAltaForm() {
     return (
       <Card className="mx-auto max-w-xl">
         <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          <CheckCircle2 className="size-12 text-primary" />
-          <h2 className="font-heading text-lg font-semibold">¡Listo!</h2>
+          <span className="flex size-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
+            <CheckCircle2 className="size-9" />
+          </span>
+          <h2 className="font-heading text-xl font-bold">¡Listo!</h2>
           <p className="max-w-sm text-sm text-muted-foreground">
             Tu solicitud fue recibida. Va a estar sujeta a la aprobación del
             equipo del estudio jurídico Legal Nea, que va a evaluarla junto
@@ -113,10 +115,12 @@ export function ClienteAltaForm() {
 
   return (
     <Card className="mx-auto max-w-2xl">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <HeartHandshake className="size-5 text-primary" />
-          <CardTitle>Pedí ayuda legal gratuita</CardTitle>
+      <CardHeader className="border-b bg-gradient-to-br from-primary/8 to-transparent">
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+            <HeartHandshake className="size-5" />
+          </span>
+          <CardTitle className="text-xl">Pedí ayuda legal gratuita</CardTitle>
         </div>
         <CardDescription>
           Contanos tu situación. Es gratuito y un abogado voluntario de

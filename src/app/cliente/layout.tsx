@@ -8,7 +8,7 @@ export default async function ClienteLayout({ children }: { children: ReactNode 
   return (
     <div className="flex min-h-full flex-col">
       <ClienteNav nombre={perfil.nombre_completo} />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">{children}</main>
     </div>
   );
 }

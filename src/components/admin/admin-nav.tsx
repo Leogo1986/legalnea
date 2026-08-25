@@ -27,11 +27,15 @@ export function AdminNav({ nombre }: { nombre: string }) {
 
   return (
     <header className="border-b bg-background">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
+      <div className="mx-auto flex h-18 max-w-6xl items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-6">
-          <span className="flex items-center gap-2 font-heading text-sm font-semibold">
-            <Users className="size-4 text-primary" />
-            {SITE_NAME} · Admin
+          <span className="flex items-center gap-2.5 font-heading text-xl font-bold tracking-tight">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Users className="size-5" />
+            </span>
+            <span className="hidden sm:inline">
+              {SITE_NAME} <span className="text-muted-foreground font-medium">· Admin</span>
+            </span>
           </span>
           <nav className="hidden items-center gap-1 sm:flex">
             {LINKS.map((link) => {
@@ -41,7 +45,6 @@ export function AdminNav({ nombre }: { nombre: string }) {
                 <Button
                   key={link.href}
                   variant={activo ? "secondary" : "ghost"}
-                  size="sm"
                   render={<Link href={link.href} />}
                 >
                   <Icon className="size-4" />
@@ -52,8 +55,8 @@ export function AdminNav({ nombre }: { nombre: string }) {
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          <span className={cn("hidden text-xs text-muted-foreground sm:inline")}>{nombre}</span>
-          <Button variant="ghost" size="sm" onClick={salir}>
+          <span className={cn("hidden text-sm text-muted-foreground sm:inline")}>{nombre}</span>
+          <Button variant="ghost" onClick={salir}>
             <LogOut className="size-4" />
             Salir
           </Button>

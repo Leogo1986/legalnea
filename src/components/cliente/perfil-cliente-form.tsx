@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { BadgeCheck, Loader2, Mail, MapPin, Save, UserRound } from "lucide-react";
+import { Loader2, Mail, MapPin, Save, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -13,38 +13,13 @@ import { Separator } from "@/components/ui/separator";
 import { ComboboxProvincia } from "@/components/shared/combobox-provincia";
 import { DomicilioFields } from "@/components/shared/domicilio-fields";
 import { SelectLocalidad } from "@/components/shared/select-localidad";
-import {
-  abogadoDatosSchema,
-  validarAlMenosUnaMatricula,
-  REFINEMENT_MATRICULA,
-} from "@/lib/validation/abogado.schema";
-import { actualizarPerfilAbogado } from "@/app/abogado/perfil/actions";
-import { z } from "zod";
+import { clienteEditarSchema, type ClienteEditarInput } from "@/lib/validation/cliente.schema";
+import { actualizarPerfilCliente } from "@/app/cliente/perfil/actions";
 
-const editarPerfilSchema = abogadoDatosSchema
-  .omit({ especialidad_ids: true, email: true })
-  .refine(validarAlMenosUnaMatricula, REFINEMENT_MATRICULA);
-
-type EditarPerfilInput = z.infer<typeof editarPerfilSchema>;
-
-function TituloSeccion({
-  icon: Icon,
-  children,
+export function PerfilClienteForm({
+  cliente,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
-  children: React.ReactNode;
-}) {
-  return (
-    <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-      <Icon className="size-3.5" /> {children}
-    </p>
-  );
-}
-
-export function PerfilAbogadoForm({
-  abogado,
-}: {
-  abogado: {
+  cliente: {
     nombre_completo: string;
     email: string;
     telefono: string;
@@ -54,9 +29,6 @@ export function PerfilAbogadoForm({
     dpto: string | null;
     provincia: string;
     localidad: string;
-    codigo_postal: string | null;
-    matricula_federal: string | null;
-    matricula_provincial: string | null;
   };
 }) {
   const {
@@ -66,28 +38,25 @@ export function PerfilAbogadoForm({
     watch,
     setValue,
     formState: { errors },
-  } = useForm<EditarPerfilInput>({
-    resolver: zodResolver(editarPerfilSchema),
+  } = useForm<ClienteEditarInput>({
+    resolver: zodResolver(clienteEditarSchema),
     defaultValues: {
-      nombre_completo: abogado.nombre_completo,
-      telefono: abogado.telefono,
-      calle: abogado.calle ?? "",
-      altura: abogado.altura ?? "",
-      piso: abogado.piso ?? "",
-      dpto: abogado.dpto ?? "",
-      provincia: abogado.provincia,
-      localidad: abogado.localidad,
-      codigo_postal: abogado.codigo_postal ?? "",
-      matricula_federal: abogado.matricula_federal ?? "",
-      matricula_provincial: abogado.matricula_provincial ?? "",
+      nombre_completo: cliente.nombre_completo,
+      telefono: cliente.telefono,
+      calle: cliente.calle ?? "",
+      altura: cliente.altura ?? "",
+      piso: cliente.piso ?? "",
+      dpto: cliente.dpto ?? "",
+      provincia: cliente.provincia,
+      localidad: cliente.localidad,
     },
   });
 
   const [guardando, setGuardando] = React.useState(false);
 
-  async function onSubmit(datos: EditarPerfilInput) {
+  async function onSubmit(datos: ClienteEditarInput) {
     setGuardando(true);
-    const res = await actualizarPerfilAbogado(datos);
+    const res = await actualizarPerfilCliente(datos);
     setGuardando(false);
     if (!res.success) {
       toast.error(res.error);
@@ -107,10 +76,12 @@ export function PerfilAbogadoForm({
       <CardContent className="pt-5">
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6" noValidate>
           <div className="grid gap-4">
-            <TituloSeccion icon={Mail}>Datos de contacto</TituloSeccion>
+            <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              <Mail className="size-3.5" /> Datos de contacto
+            </p>
             <div className="grid gap-1.5">
               <Label htmlFor="email">Email (no editable)</Label>
-              <Input id="email" value={abogado.email} disabled />
+              <Input id="email" value={cliente.email} disabled />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-1.5">
@@ -133,9 +104,11 @@ export function PerfilAbogadoForm({
           <Separator />
 
           <div className="grid gap-4">
-            <TituloSeccion icon={MapPin}>Domicilio</TituloSeccion>
+            <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              <MapPin className="size-3.5" /> Domicilio
+            </p>
             <DomicilioFields register={register} errors={errors} />
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <Label htmlFor="provincia">Provincia</Label>
                 <Controller
@@ -166,30 +139,7 @@ export function PerfilAbogadoForm({
                   )}
                 />
               </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="codigo_postal">Código postal</Label>
-                <Input id="codigo_postal" {...register("codigo_postal")} />
-              </div>
             </div>
-          </div>
-
-          <Separator />
-
-          <div className="grid gap-4">
-            <TituloSeccion icon={BadgeCheck}>Matrícula</TituloSeccion>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <Label htmlFor="matricula_federal">Matrícula federal</Label>
-                <Input id="matricula_federal" {...register("matricula_federal")} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="matricula_provincial">Matrícula provincial</Label>
-                <Input id="matricula_provincial" {...register("matricula_provincial")} />
-              </div>
-            </div>
-            {errors.matricula_federal && (
-              <p className="text-sm text-destructive">{errors.matricula_federal.message}</p>
-            )}
           </div>
 
           <Button type="submit" disabled={guardando} className="mt-2 w-fit">

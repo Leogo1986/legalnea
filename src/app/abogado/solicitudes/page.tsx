@@ -55,7 +55,7 @@ export default async function SolicitudesAbogadoPage() {
   return (
     <div className="grid gap-4">
       <div>
-        <h1 className="font-heading text-xl font-semibold">Mis solicitudes asignadas</h1>
+        <h1 className="font-heading text-2xl font-bold md:text-3xl">Mis solicitudes asignadas</h1>
         <p className="text-sm text-muted-foreground">
           Casos de la red PROBONO que te asignó el equipo de Legal Nea.
         </p>

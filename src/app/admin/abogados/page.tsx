@@ -53,7 +53,7 @@ export default async function AdminAbogadosPage({
   return (
     <div className="grid gap-4">
       <div>
-        <h1 className="font-heading text-xl font-semibold">Abogados</h1>
+        <h1 className="font-heading text-2xl font-bold md:text-3xl">Abogados</h1>
         <p className="text-sm text-muted-foreground">
           Gestioná las solicitudes de alta de la red PROBONO.
         </p>

@@ -47,6 +47,19 @@ export const clienteAltaSchema = z.object({
 
 export type ClienteAltaInput = z.infer<typeof clienteAltaSchema>;
 
+// Edición de perfil propio (/cliente/perfil): mismos datos de contacto del
+// alta, sin motivo de consulta/declaración jurada ni email (no editable,
+// es el identificador de login). clienteAltaSchema no tiene `.refine()`
+// (a diferencia de abogadoAltaSchema), así que acá sí se puede partir
+// directo de él con `.omit()`.
+export const clienteEditarSchema = clienteAltaSchema.omit({
+  email: true,
+  motivo_consulta: true,
+  declaracion_veracidad_aceptada: true,
+});
+
+export type ClienteEditarInput = z.infer<typeof clienteEditarSchema>;
+
 // Validación client-side de cada archivo adjunto antes de subir a Storage
 export function validarArchivoAdjunto(file: File): string | null {
   if (!TIPOS_MIME_PERMITIDOS.includes(file.type as (typeof TIPOS_MIME_PERMITIDOS)[number])) {

@@ -10,7 +10,7 @@ import { getSiteUrl } from "@/lib/site-url";
 // panel de Administrador (2.a).
 export async function generarYEnviarReseteoPassword(
   email: string
-): Promise<{ ok: boolean }> {
+): Promise<{ ok: boolean; error?: string }> {
   const admin = createAdminClient();
 
   const { data: perfil } = await admin
@@ -28,14 +28,22 @@ export async function generarYEnviarReseteoPassword(
   });
 
   if (error || !data?.properties?.action_link) {
-    return { ok: false };
+    return { ok: false, error: "No pudimos generar el link de reseteo." };
   }
 
-  await enviarReseteoPassword({
+  // Antes acá se ignoraba el resultado de enviarReseteoPassword y siempre se
+  // devolvía {ok:true} — el admin veía "Listo." aunque el mail no se haya
+  // mandado (ej. RESEND_API_KEY sin configurar). Ahora se propaga el error
+  // real para que el toast diga la verdad.
+  const resultadoEnvio = await enviarReseteoPassword({
     email,
     nombreCompleto: perfil?.nombre_completo ?? email,
     linkReseteo: data.properties.action_link,
   });
+
+  if (!resultadoEnvio.ok) {
+    return { ok: false, error: resultadoEnvio.error ?? "No pudimos enviar el mail de reseteo." };
+  }
 
   return { ok: true };
 }

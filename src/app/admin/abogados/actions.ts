@@ -177,7 +177,7 @@ export async function reactivarAbogado(abogadoId: string): Promise<ResultadoAcci
 export async function resetearPasswordAbogado(email: string): Promise<ResultadoAccion> {
   await requireRole("admin");
   const res = await generarYEnviarReseteoPassword(email);
-  if (!res.ok) return { success: false, error: "No pudimos generar el link de reseteo." };
+  if (!res.ok) return { success: false, error: res.error ?? "No pudimos generar el link de reseteo." };
   return { success: true };
 }
 

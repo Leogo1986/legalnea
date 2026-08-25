@@ -14,6 +14,13 @@ const MENSAJE_ESTADO: Record<string, string> = {
   inactivo: "Tu cuenta está suspendida. Contactá al administrador si creés que es un error.",
 };
 
+const BORDE_ESTADO: Record<string, string> = {
+  pendiente: "border-l-amber-500",
+  aprobado: "border-l-emerald-500",
+  rechazado: "border-l-destructive",
+  inactivo: "border-l-muted-foreground",
+};
+
 export default async function PerfilAbogadoPage() {
   const { user } = await requireRole("abogado");
   const supabase = await createClient();
@@ -32,7 +39,12 @@ export default async function PerfilAbogadoPage() {
 
   return (
     <div className="grid gap-4">
-      <Card>
+      <div>
+        <h1 className="font-heading text-2xl font-bold md:text-3xl">Mi perfil</h1>
+        <p className="text-sm text-muted-foreground">Tus datos y el estado de tu cuenta.</p>
+      </div>
+
+      <Card className={`border-l-4 ${BORDE_ESTADO[abogado.estado]}`}>
         <CardContent className="py-4 text-sm">
           <p className="font-medium">Estado: {abogado.estado}</p>
           <p className="text-muted-foreground">{MENSAJE_ESTADO[abogado.estado]}</p>

@@ -134,7 +134,7 @@ export default async function DashboardAbogadoPage() {
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="font-heading text-xl font-semibold">Dashboard</h1>
+        <h1 className="font-heading text-2xl font-bold md:text-3xl">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Resumen de tus casos asignados.</p>
       </div>
 

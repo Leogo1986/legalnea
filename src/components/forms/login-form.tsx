@@ -24,8 +24,8 @@ import { loginSchema, type LoginInput } from "@/lib/validation/auth.schema";
 
 const RUTA_POR_ROL: Record<string, string> = {
   admin: "/admin/dashboard",
-  abogado: "/abogado/perfil",
-  cliente: "/cliente/solicitud",
+  abogado: "/abogado/dashboard",
+  cliente: "/cliente/dashboard",
 };
 
 export function LoginForm() {
@@ -72,8 +72,8 @@ export function LoginForm() {
 
   return (
     <Card className="mx-auto max-w-sm">
-      <CardHeader>
-        <CardTitle>Ingresar</CardTitle>
+      <CardHeader className="border-b bg-gradient-to-br from-primary/8 to-transparent">
+        <CardTitle className="text-xl">Ingresar</CardTitle>
         <CardDescription>Accedé a tu panel de Legal Nea Soft.</CardDescription>
       </CardHeader>
       <CardContent>

@@ -21,8 +21,8 @@ import { nuevaPasswordSchema, type NuevaPasswordInput } from "@/lib/validation/a
 
 const RUTA_POR_ROL: Record<string, string> = {
   admin: "/admin/dashboard",
-  abogado: "/abogado/perfil",
-  cliente: "/cliente/solicitud",
+  abogado: "/abogado/dashboard",
+  cliente: "/cliente/dashboard",
 };
 
 export function SetPasswordForm({
@@ -76,8 +76,8 @@ export function SetPasswordForm({
 
   return (
     <Card className="mx-auto max-w-sm">
-      <CardHeader>
-        <CardTitle>{titulo}</CardTitle>
+      <CardHeader className="border-b bg-gradient-to-br from-primary/8 to-transparent">
+        <CardTitle className="text-xl">{titulo}</CardTitle>
         <CardDescription>{descripcion}</CardDescription>
       </CardHeader>
       <CardContent>

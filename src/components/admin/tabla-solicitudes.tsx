@@ -127,12 +127,16 @@ export function TablaSolicitudes({
 }) {
   const router = useRouter();
   const [detalle, setDetalle] = React.useState<SolicitudAdmin | null>(null);
-  const [ocupado, setOcupado] = React.useState(false);
   const [mensaje, setMensaje] = React.useState("");
   const [enviandoMensaje, setEnviandoMensaje] = React.useState(false);
   const [enAccion, setEnAccion] = React.useState<string | null>(null);
   const [dialogoRechazo, setDialogoRechazo] = React.useState<SolicitudAdmin | null>(null);
   const [motivoRechazo, setMotivoRechazo] = React.useState("");
+  // Separado de `ocupado` a propósito: `ocupado` lo usan los selects de
+  // estado/prioridad/abogado del diálogo — si este botón comparte esa misma
+  // bandera, cambiar la prioridad lo deja gris con el spinner puesto aunque
+  // nunca se ejecutó (así se reportó el bug).
+  const [reseteandoPassword, setReseteandoPassword] = React.useState(false);
 
   async function enviarMensaje() {
     if (!detalle || !mensaje.trim()) return;
@@ -149,9 +153,7 @@ export function TablaSolicitudes({
   }
 
   async function conFeedback(fn: () => Promise<{ success: boolean; error?: string }>) {
-    setOcupado(true);
     const res = await fn();
-    setOcupado(false);
     if (!res.success) {
       toast.error(res.error ?? "Ocurrió un error.");
       return;
@@ -384,10 +386,18 @@ export function TablaSolicitudes({
                   variant="outline"
                   size="sm"
                   className="w-fit"
-                  onClick={() => conFeedback(() => resetearPasswordCliente(detalle.cliente_email))}
-                  disabled={ocupado}
+                  onClick={async () => {
+                    setReseteandoPassword(true);
+                    await conFeedback(() => resetearPasswordCliente(detalle.cliente_email));
+                    setReseteandoPassword(false);
+                  }}
+                  disabled={reseteandoPassword}
                 >
-                  {ocupado ? <Loader2 className="animate-spin" /> : <KeyRound className="size-3.5" />}
+                  {reseteandoPassword ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <KeyRound className="size-3.5" />
+                  )}
                   Restablecer contraseña del cliente
                 </Button>
 

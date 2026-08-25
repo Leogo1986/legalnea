@@ -97,6 +97,11 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="grid gap-6">
+      <div>
+        <h1 className="font-heading text-2xl font-bold md:text-3xl">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Panorama general de la red PROBONO.</p>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tarjetas.map((t) => (
           <Link key={t.titulo} href={t.href} className="block">

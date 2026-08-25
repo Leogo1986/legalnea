@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type ResultadoAccion = { success: true } | { success: false; error: string };
 
-// Mismo patrón que `verificarPropiaSolicitud` en cliente/solicitud/actions.ts,
+// Mismo patrón que `verificarPropiaSolicitud` en cliente/solicitudes/actions.ts,
 // pero verificando que el caso esté asignado a este abogado.
 async function verificarSolicitudAsignada(solicitudId: string, userId: string) {
   const supabase = await createClient();
@@ -104,6 +104,6 @@ export async function agregarEventoCaso(
   if (error) return { success: false, error: "No pudimos guardar la etapa." };
 
   revalidatePath("/abogado/solicitudes");
-  revalidatePath("/cliente/solicitud");
+  revalidatePath(`/cliente/solicitudes/${solicitudId}`);
   return { success: true };
 }

@@ -100,7 +100,7 @@ export default async function AdminSolicitudesPage({
   return (
     <div className="grid gap-4">
       <div>
-        <h1 className="font-heading text-xl font-semibold">Solicitudes</h1>
+        <h1 className="font-heading text-2xl font-bold md:text-3xl">Solicitudes</h1>
         <p className="text-sm text-muted-foreground">
           Gestioná las solicitudes de asistencia jurídica gratuita.
         </p>
