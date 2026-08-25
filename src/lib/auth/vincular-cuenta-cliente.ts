@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSiteUrl } from "@/lib/site-url";
+import { generarPasswordTemporal } from "@/lib/auth/generar-password";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -7,19 +7,20 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 // recién cuando el admin aprueba la solicitud (admin/solicitudes/actions.ts)
 // — antes de eso el cliente no tiene forma de loguear, que es justamente el
 // filtro: cualquiera puede mandar el formulario público, pero solo entra
-// quien el equipo de Legal Nea aprobó. Mismo fix de email_confirm que en
-// aprobarAbogado: generateLink({type:"invite"}) deja la cuenta sin confirmar
-// hasta que se clickea el link del mail, y ese mail puede no llegar (Resend
-// sin configurar todavía) — la aprobación del admin ya es el gate real, así
-// que confirmamos el email nosotros mismos. No bloqueante: si esto falla, la
-// solicitud ya quedó aprobada igual y el admin puede resolverlo a mano
-// (botón "Restablecer contraseña del cliente").
+// quien el equipo de Legal Nea aprobó.
+//
+// La cuenta se crea con una clave temporal generada acá mismo (no con
+// generateLink({type:"invite"}) + mail) para poder mandársela directo por
+// WhatsApp al aprobar, sin depender de que Resend esté configurado. Si el
+// email ya tenía cuenta de una solicitud anterior, no se toca su clave
+// (podría estar en uso) — devuelve `password: null` en ese caso; el admin
+// puede generar una clave nueva a mano con "Generar nueva clave".
 export async function vincularCuentaCliente(
   supabase: AdminClient,
   clienteId: string,
   email: string,
   nombreCompleto: string
-): Promise<void> {
+): Promise<{ password: string | null }> {
   try {
     const { data: perfilExistente } = await supabase
       .from("perfiles")
@@ -29,26 +30,32 @@ export async function vincularCuentaCliente(
 
     if (perfilExistente) {
       await supabase.from("clientes").update({ user_id: perfilExistente.id }).eq("id", clienteId);
-      return;
+      return { password: null };
     }
 
-    const { data: invitado, error: errorInvite } = await supabase.auth.admin.generateLink({
-      type: "invite",
+    const password = generarPasswordTemporal();
+    const { data: creado, error: errorCreate } = await supabase.auth.admin.createUser({
       email,
-      options: { redirectTo: `${getSiteUrl()}/auth/confirm?next=/actualizar-password` },
+      password,
+      email_confirm: true,
     });
 
-    if (errorInvite || !invitado?.user) return;
+    if (errorCreate || !creado?.user) {
+      console.error("[vincularCuentaCliente] createUser falló:", errorCreate);
+      return { password: null };
+    }
 
-    await supabase.auth.admin.updateUserById(invitado.user.id, { email_confirm: true });
     await supabase.from("perfiles").upsert({
-      id: invitado.user.id,
+      id: creado.user.id,
       rol: "cliente",
       nombre_completo: nombreCompleto,
       email,
     });
-    await supabase.from("clientes").update({ user_id: invitado.user.id }).eq("id", clienteId);
+    await supabase.from("clientes").update({ user_id: creado.user.id }).eq("id", clienteId);
+
+    return { password };
   } catch (error) {
     console.error("[vincularCuentaCliente] no se pudo crear/vincular la cuenta:", error);
+    return { password: null };
   }
 }

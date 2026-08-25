@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { PerfilClienteForm } from "@/components/cliente/perfil-cliente-form";
+import { CambiarPasswordClienteForm } from "@/components/cliente/cambiar-password-cliente-form";
 
 export const metadata: Metadata = { title: "Mi perfil — Legal Nea Soft" };
 
@@ -26,6 +27,7 @@ export default async function PerfilClientePage() {
         <p className="text-sm text-muted-foreground">Revisá y actualizá tus datos de contacto.</p>
       </div>
       <PerfilClienteForm cliente={cliente} />
+      <CambiarPasswordClienteForm />
     </div>
   );
 }

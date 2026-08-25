@@ -16,14 +16,22 @@ export function armarLinkWhatsapp(telefono: string, mensaje: string): string {
 
 // Mensaje prearmado para el botón manual de "avisar aprobación" en
 // admin/solicitudes: el admin lo revisa/edita en WhatsApp antes de mandarlo.
-export function mensajeSolicitudAprobada(nombre: string, email: string, siteUrl: string): string {
+// Lleva la clave generada directo en el texto (ver generarPasswordTemporal)
+// en vez de mandar al cliente a "olvidé mi contraseña" — así se esquiva la
+// dependencia de Resend para que el cliente pueda entrar.
+export function mensajeSolicitudAprobada(
+  nombre: string,
+  email: string,
+  password: string,
+  siteUrl: string
+): string {
   const primerNombre = nombre.trim().split(" ")[0] || nombre;
   return (
     `Hola ${primerNombre}, te escribimos del estudio jurídico Legal Nea. ` +
-    `Tu solicitud de asistencia legal gratuita fue aprobada ✅. En breve un ` +
+    `Tu solicitud de asistencia legal gratuita fue aprobada. En breve un ` +
     `abogado de nuestra red PROBONO se va a poner en contacto con vos. ` +
-    `Para ingresar a tu cuenta, entrá a ${siteUrl}/login y usá la opción ` +
-    `"Olvidé mi contraseña" con tu email (${email}) para crear tu clave. ` +
-    `¡Gracias por confiar en Legal Nea!`
+    `Para ingresar a tu cuenta, entrá a ${siteUrl}/login con tu email ` +
+    `(${email}) y esta clave: ${password}\n\n` +
+    `Te recomendamos cambiarla apenas ingreses. ¡Gracias por confiar en Legal Nea!`
   );
 }

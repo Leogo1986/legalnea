@@ -3,17 +3,23 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generarYEnviarReseteoPassword } from "@/lib/auth/enviar-reseteo";
 import { vincularCuentaCliente } from "@/lib/auth/vincular-cuenta-cliente";
+import { generarPasswordTemporal } from "@/lib/auth/generar-password";
 import type { EstadoSolicitud, Prioridad } from "@/types/database";
 
 type ResultadoAccion = { success: true } | { success: false; error: string };
+type ResultadoConClave =
+  | { success: true; password?: string }
+  | { success: false; error: string };
 
 // Aprueba una solicitud "nueva": recién acá se crea/vincula la cuenta de
 // Auth del cliente (ver lib/auth/vincular-cuenta-cliente.ts) — es el gate
 // real que pidió el usuario, no cualquiera que llena el formulario público
-// termina con una cuenta activa.
-export async function aprobarSolicitud(solicitudId: string): Promise<ResultadoAccion> {
+// termina con una cuenta activa. Si la cuenta se crea en este paso, devuelve
+// la clave temporal generada (`password`) para que el admin la mande por
+// WhatsApp — si el cliente ya tenía cuenta de una solicitud anterior, no
+// viene clave (usar "Generar nueva clave" si hace falta).
+export async function aprobarSolicitud(solicitudId: string): Promise<ResultadoConClave> {
   const { user } = await requireRole("admin");
   const admin = createAdminClient();
 
@@ -34,8 +40,10 @@ export async function aprobarSolicitud(solicitudId: string): Promise<ResultadoAc
 
   if (!cliente) return { success: false, error: "No encontramos al cliente de esta solicitud." };
 
+  let password: string | undefined;
   if (!cliente.user_id) {
-    await vincularCuentaCliente(admin, cliente.id, cliente.email, cliente.nombre_completo);
+    const res = await vincularCuentaCliente(admin, cliente.id, cliente.email, cliente.nombre_completo);
+    password = res.password ?? undefined;
   }
 
   const nuevoEstado = solicitud.estado === "nueva" ? "en_revision" : solicitud.estado;
@@ -60,7 +68,7 @@ export async function aprobarSolicitud(solicitudId: string): Promise<ResultadoAc
   });
 
   revalidatePath("/admin/solicitudes");
-  return { success: true };
+  return { success: true, password };
 }
 
 export async function rechazarSolicitud(
@@ -174,11 +182,29 @@ export async function asignarAbogado(
   return { success: true };
 }
 
-export async function resetearPasswordCliente(email: string): Promise<ResultadoAccion> {
+// Genera y setea una clave nueva directo por Auth admin (sin mail/Resend de
+// por medio) para un cliente que YA tiene cuenta — para mandarla por
+// WhatsApp igual que al aprobar. Requiere que el cliente tenga perfil (si
+// nunca fue aprobado, no hay cuenta que resetear).
+export async function generarClaveClienteExistente(email: string): Promise<ResultadoConClave> {
   await requireRole("admin");
-  const res = await generarYEnviarReseteoPassword(email);
-  if (!res.ok) return { success: false, error: res.error ?? "No pudimos generar el link de reseteo." };
-  return { success: true };
+  const admin = createAdminClient();
+
+  const { data: perfil } = await admin
+    .from("perfiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (!perfil) {
+    return { success: false, error: "Ese cliente todavía no tiene cuenta (aprobá su solicitud primero)." };
+  }
+
+  const password = generarPasswordTemporal();
+  const { error } = await admin.auth.admin.updateUserById(perfil.id, { password });
+
+  if (error) return { success: false, error: "No pudimos generar la clave." };
+  return { success: true, password };
 }
 
 export async function enviarMensajeAdmin(

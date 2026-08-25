@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Check,
+  Copy,
   Download,
   Eye,
   KeyRound,
@@ -50,9 +51,9 @@ import {
   cambiarEstadoSolicitud,
   cambiarPrioridadSolicitud,
   enviarMensajeAdmin,
+  generarClaveClienteExistente,
   obtenerUrlFirmadaAdjunto,
   rechazarSolicitud,
-  resetearPasswordCliente,
 } from "@/app/admin/solicitudes/actions";
 
 export type SolicitudAdmin = {
@@ -137,6 +138,15 @@ export function TablaSolicitudes({
   // bandera, cambiar la prioridad lo deja gris con el spinner puesto aunque
   // nunca se ejecutó (así se reportó el bug).
   const [reseteandoPassword, setReseteandoPassword] = React.useState(false);
+  // Clave temporal recién generada (al aprobar o al pedirla a mano) — se
+  // muestra una sola vez acá para copiarla o mandarla por WhatsApp; no queda
+  // guardada en ningún lado en texto plano.
+  const [claveGenerada, setClaveGenerada] = React.useState<{
+    nombre: string;
+    email: string;
+    telefono: string;
+    password: string;
+  } | null>(null);
 
   async function enviarMensaje() {
     if (!detalle || !mensaje.trim()) return;
@@ -174,9 +184,43 @@ export function TablaSolicitudes({
     router.refresh();
   }
 
-  function abrirWhatsapp(s: SolicitudAdmin) {
-    const mensaje = mensajeSolicitudAprobada(s.cliente_nombre, s.cliente_email, siteUrl);
-    window.open(armarLinkWhatsapp(s.cliente_telefono, mensaje), "_blank", "noopener,noreferrer");
+  async function aprobar(s: SolicitudAdmin) {
+    setEnAccion(s.id);
+    const res = await aprobarSolicitud(s.id);
+    setEnAccion(null);
+    if (!res.success) {
+      toast.error(res.error ?? "Ocurrió un error.");
+      return;
+    }
+    toast.success("Solicitud aprobada.");
+    if (res.password) {
+      setClaveGenerada({
+        nombre: s.cliente_nombre,
+        email: s.cliente_email,
+        telefono: s.cliente_telefono,
+        password: res.password,
+      });
+    }
+    router.refresh();
+  }
+
+  // Genera una clave nueva y abre el diálogo para copiarla/mandarla — se usa
+  // tanto desde el botón de WhatsApp de la fila (cliente ya aprobado antes)
+  // como desde "Generar nueva clave" en el detalle.
+  async function generarYMostrarClave(
+    idBusy: string,
+    datos: { nombre: string; email: string; telefono: string }
+  ) {
+    setEnAccion(idBusy);
+    const res = await generarClaveClienteExistente(datos.email);
+    setEnAccion(null);
+    if (!res.success) {
+      toast.error(res.error ?? "Ocurrió un error.");
+      return;
+    }
+    if (res.password) {
+      setClaveGenerada({ ...datos, password: res.password });
+    }
   }
 
   async function descargarAdjunto(ruta: string) {
@@ -255,7 +299,7 @@ export function TablaSolicitudes({
                               size="icon-sm"
                               variant="ghost"
                               title="Aprobar"
-                              onClick={() => ejecutarFila(s.id, () => aprobarSolicitud(s.id))}
+                              onClick={() => aprobar(s)}
                             >
                               <Check className="size-4 text-emerald-600" />
                             </Button>
@@ -276,8 +320,14 @@ export function TablaSolicitudes({
                           <Button
                             size="icon-sm"
                             variant="ghost"
-                            title="Avisar aprobación por WhatsApp"
-                            onClick={() => abrirWhatsapp(s)}
+                            title="Generar clave y avisar por WhatsApp"
+                            onClick={() =>
+                              generarYMostrarClave(s.id, {
+                                nombre: s.cliente_nombre,
+                                email: s.cliente_email,
+                                telefono: s.cliente_telefono,
+                              })
+                            }
                           >
                             <MessageCircle className="size-4 text-emerald-600" />
                           </Button>
@@ -388,7 +438,11 @@ export function TablaSolicitudes({
                   className="w-fit"
                   onClick={async () => {
                     setReseteandoPassword(true);
-                    await conFeedback(() => resetearPasswordCliente(detalle.cliente_email));
+                    await generarYMostrarClave(`detalle-${detalle.id}`, {
+                      nombre: detalle.cliente_nombre,
+                      email: detalle.cliente_email,
+                      telefono: detalle.cliente_telefono,
+                    });
                     setReseteandoPassword(false);
                   }}
                   disabled={reseteandoPassword}
@@ -398,7 +452,7 @@ export function TablaSolicitudes({
                   ) : (
                     <KeyRound className="size-3.5" />
                   )}
-                  Restablecer contraseña del cliente
+                  Generar nueva clave
                 </Button>
 
                 <div className="grid gap-2 rounded-lg border p-3">
@@ -466,6 +520,53 @@ export function TablaSolicitudes({
               }}
             >
               Confirmar rechazo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!claveGenerada} onOpenChange={(open) => !open && setClaveGenerada(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clave para {claveGenerada?.nombre}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 text-sm">
+            <p className="text-muted-foreground">
+              Se muestra una sola vez acá — copiala o mandala por WhatsApp ahora. No queda
+              guardada en ningún lado en texto plano.
+            </p>
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
+              <span className="flex-1 truncate font-mono text-base">{claveGenerada?.password}</span>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                title="Copiar clave"
+                onClick={() => {
+                  if (!claveGenerada) return;
+                  navigator.clipboard.writeText(claveGenerada.password);
+                  toast.success("Clave copiada.");
+                }}
+              >
+                <Copy className="size-4" />
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                if (!claveGenerada) return;
+                const mensaje = mensajeSolicitudAprobada(
+                  claveGenerada.nombre,
+                  claveGenerada.email,
+                  claveGenerada.password,
+                  siteUrl
+                );
+                window.open(armarLinkWhatsapp(claveGenerada.telefono, mensaje), "_blank", "noopener,noreferrer");
+                setClaveGenerada(null);
+              }}
+            >
+              <MessageCircle className="size-4" />
+              Enviar por WhatsApp
             </Button>
           </DialogFooter>
         </DialogContent>
