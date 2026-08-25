@@ -127,12 +127,28 @@ export function TablaSolicitudes({
   siteUrl: string;
 }) {
   const router = useRouter();
-  const [detalle, setDetalle] = React.useState<SolicitudAdmin | null>(null);
+  // Se guarda el id, no una copia del objeto: `detalle` se deriva de
+  // `solicitudes` en cada render, así que después de un router.refresh() (al
+  // asignar abogado, cambiar estado/prioridad) el diálogo siempre muestra lo
+  // último guardado — antes se guardaba una copia congelada al abrir el
+  // ojito y quedaba desactualizada aunque el toast dijera "Listo".
+  const [detalleId, setDetalleId] = React.useState<string | null>(null);
+  const detalle = detalleId ? (solicitudes.find((s) => s.id === detalleId) ?? null) : null;
+
   const [mensaje, setMensaje] = React.useState("");
   const [enviandoMensaje, setEnviandoMensaje] = React.useState(false);
   const [enAccion, setEnAccion] = React.useState<string | null>(null);
   const [dialogoRechazo, setDialogoRechazo] = React.useState<SolicitudAdmin | null>(null);
   const [motivoRechazo, setMotivoRechazo] = React.useState("");
+  // Solicitudes que el admin ya abrió con el ojito en esta sesión — se exige
+  // haber mirado el detalle antes de poder aprobar (pedido explícito: no
+  // aceptar a ciegas). Se resetea al recargar la página a propósito.
+  const [vistos, setVistos] = React.useState<Set<string>>(new Set());
+
+  function verDetalle(s: SolicitudAdmin) {
+    setDetalleId(s.id);
+    setVistos((prev) => new Set(prev).add(s.id));
+  }
   // Separado de `ocupado` a propósito: `ocupado` lo usan los selects de
   // estado/prioridad/abogado del diálogo — si este botón comparte esa misma
   // bandera, cambiar la prioridad lo deja gris con el spinner puesto aunque
@@ -298,7 +314,12 @@ export function TablaSolicitudes({
                             <Button
                               size="icon-sm"
                               variant="ghost"
-                              title="Aprobar"
+                              title={
+                                vistos.has(s.id)
+                                  ? "Aprobar"
+                                  : "Mirá el detalle primero (ícono del ojo)"
+                              }
+                              disabled={!vistos.has(s.id)}
                               onClick={() => aprobar(s)}
                             >
                               <Check className="size-4 text-emerald-600" />
@@ -332,7 +353,7 @@ export function TablaSolicitudes({
                             <MessageCircle className="size-4 text-emerald-600" />
                           </Button>
                         )}
-                        <Button size="icon-sm" variant="ghost" title="Ver detalle" onClick={() => setDetalle(s)}>
+                        <Button size="icon-sm" variant="ghost" title="Ver detalle" onClick={() => verDetalle(s)}>
                           <Eye className="size-4" />
                         </Button>
                       </>
@@ -345,7 +366,7 @@ export function TablaSolicitudes({
         </Table>
       </div>
 
-      <Dialog open={!!detalle} onOpenChange={(open) => !open && setDetalle(null)}>
+      <Dialog open={!!detalle} onOpenChange={(open) => !open && setDetalleId(null)}>
         <DialogContent className="max-w-lg">
           {detalle && (
             <>

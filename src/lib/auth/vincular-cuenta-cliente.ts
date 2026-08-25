@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generarPasswordTemporal } from "@/lib/auth/generar-password";
+import { generarPasswordApartirDeNombre } from "@/lib/auth/generar-password";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -33,7 +33,7 @@ export async function vincularCuentaCliente(
       return { password: null };
     }
 
-    const password = generarPasswordTemporal();
+    const password = await generarPasswordApartirDeNombre(supabase, nombreCompleto);
     const { data: creado, error: errorCreate } = await supabase.auth.admin.createUser({
       email,
       password,

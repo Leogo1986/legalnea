@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { vincularCuentaCliente } from "@/lib/auth/vincular-cuenta-cliente";
-import { generarPasswordTemporal } from "@/lib/auth/generar-password";
+import { generarPasswordApartirDeNombre } from "@/lib/auth/generar-password";
 import type { EstadoSolicitud, Prioridad } from "@/types/database";
 
 type ResultadoAccion = { success: true } | { success: false; error: string };
@@ -192,7 +192,7 @@ export async function generarClaveClienteExistente(email: string): Promise<Resul
 
   const { data: perfil } = await admin
     .from("perfiles")
-    .select("id")
+    .select("id, nombre_completo")
     .eq("email", email)
     .maybeSingle();
 
@@ -200,7 +200,7 @@ export async function generarClaveClienteExistente(email: string): Promise<Resul
     return { success: false, error: "Ese cliente todavía no tiene cuenta (aprobá su solicitud primero)." };
   }
 
-  const password = generarPasswordTemporal();
+  const password = await generarPasswordApartirDeNombre(admin, perfil.nombre_completo, perfil.id);
   const { error } = await admin.auth.admin.updateUserById(perfil.id, { password });
 
   if (error) return { success: false, error: "No pudimos generar la clave." };
