@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
+import { componerDireccion } from "@/lib/domicilio";
 import {
   abogadoDatosSchema,
   validarAlMenosUnaMatricula,
@@ -38,7 +39,11 @@ export async function actualizarPerfilAbogado(input: unknown): Promise<Resultado
     .update({
       nombre_completo: datos.nombre_completo,
       telefono: datos.telefono,
-      direccion: datos.direccion,
+      calle: datos.calle,
+      altura: datos.altura,
+      piso: datos.piso || null,
+      dpto: datos.dpto || null,
+      direccion: componerDireccion(datos),
       provincia: datos.provincia,
       localidad: datos.localidad,
       codigo_postal: datos.codigo_postal || null,

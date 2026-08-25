@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { emailSchema, telefonoArgentinoSchema } from "./abogado.schema";
+import {
+  emailSchema,
+  telefonoArgentinoSchema,
+  calleSchema,
+  alturaSchema,
+  pisoDptoSchema,
+} from "./abogado.schema";
 
 export const MAX_ARCHIVOS_SOLICITUD = 5;
 export const MAX_TAMANIO_ARCHIVO_BYTES = 10 * 1024 * 1024; // 10MB
@@ -20,7 +26,10 @@ export const clienteAltaSchema = z.object({
     .max(150),
   telefono: telefonoArgentinoSchema,
   email: emailSchema,
-  direccion: z.string().trim().min(3, "Ingresá tu domicilio").max(255),
+  calle: calleSchema,
+  altura: alturaSchema,
+  piso: pisoDptoSchema,
+  dpto: pisoDptoSchema,
   provincia: z.string().trim().min(2, "Seleccioná o ingresá tu provincia"),
   localidad: z.string().trim().min(2, "Ingresá tu localidad"),
   motivo_consulta: z

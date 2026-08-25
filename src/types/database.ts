@@ -12,7 +12,8 @@ export type EstadoSolicitud =
   | "resuelta"
   | "derivada"
   | "cerrada"
-  | "anulada";
+  | "anulada"
+  | "rechazada";
 export type Prioridad = "baja" | "media" | "alta" | "urgente";
 
 export type Perfil = {
@@ -44,6 +45,10 @@ export type Abogado = {
   provincia: string;
   localidad: string;
   direccion: string | null;
+  calle: string | null;
+  altura: string | null;
+  piso: string | null;
+  dpto: string | null;
   codigo_postal: string | null;
   matricula_federal: string | null;
   matricula_provincial: string | null;
@@ -76,6 +81,10 @@ export type Cliente = {
   provincia: string;
   localidad: string;
   direccion: string | null;
+  calle: string | null;
+  altura: string | null;
+  piso: string | null;
+  dpto: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -92,6 +101,9 @@ export type Solicitud = {
   abogado_asignado_id: string | null;
   fecha_asignacion: string | null;
   resolucion: string | null;
+  aprobada_por: string | null;
+  fecha_aprobacion: string | null;
+  motivo_rechazo: string | null;
   created_at: string;
   updated_at: string;
 }

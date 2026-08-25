@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { TablaSolicitudes, type SolicitudAdmin } from "@/components/admin/tabla-solicitudes";
+import { getSiteUrl } from "@/lib/site-url";
 import type { EstadoSolicitud } from "@/types/database";
 
 export const metadata: Metadata = { title: "Solicitudes — Admin" };
@@ -13,6 +14,7 @@ const ESTADOS_VALIDOS: EstadoSolicitud[] = [
   "resuelta",
   "derivada",
   "cerrada",
+  "rechazada",
 ];
 
 export default async function AdminSolicitudesPage({
@@ -36,14 +38,25 @@ export default async function AdminSolicitudesPage({
 
   if (estadoFiltro) query = query.eq("estado", estadoFiltro);
 
-  const [{ data }, { data: abogadosAprobados }] = await Promise.all([
+  const [{ data }, { data: abogadosAprobados }, { data: asignaciones }] = await Promise.all([
     query,
     supabase
       .from("abogados")
       .select("id, nombre_completo, provincia")
       .eq("estado", "aprobado")
       .order("nombre_completo"),
+    supabase.from("solicitudes").select("abogado_asignado_id").not("abogado_asignado_id", "is", null),
   ]);
+
+  const casosPorAbogado = new Map<string, number>();
+  for (const s of asignaciones ?? []) {
+    if (!s.abogado_asignado_id) continue;
+    casosPorAbogado.set(s.abogado_asignado_id, (casosPorAbogado.get(s.abogado_asignado_id) ?? 0) + 1);
+  }
+  const abogadosConCasos = (abogadosAprobados ?? []).map((a) => ({
+    ...a,
+    casosAsignados: casosPorAbogado.get(a.id) ?? 0,
+  }));
 
   const solicitudes: SolicitudAdmin[] = (data ?? []).map((s) => {
     const cliente = s.clientes as unknown as {
@@ -94,8 +107,9 @@ export default async function AdminSolicitudesPage({
       </div>
       <TablaSolicitudes
         solicitudes={solicitudes}
-        abogadosAprobados={abogadosAprobados ?? []}
+        abogadosAprobados={abogadosConCasos}
         estadoFiltro={estadoFiltro}
+        siteUrl={getSiteUrl()}
       />
     </div>
   );

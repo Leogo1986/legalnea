@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { componerDireccion } from "@/lib/domicilio";
 import { abogadoAltaCompletoSchema } from "@/lib/validation/abogado.schema";
 import { generarPdfDeclaracionJurada } from "@/lib/pdf/declaracion-jurada-pdf";
 import { enviarAltaAbogadoConfirmacion } from "@/lib/email/enviar";
@@ -44,7 +45,11 @@ export async function crearAbogado(
     .insert({
       nombre_completo: datos.nombre_completo,
       telefono: datos.telefono,
-      direccion: datos.direccion,
+      calle: datos.calle,
+      altura: datos.altura,
+      piso: datos.piso || null,
+      dpto: datos.dpto || null,
+      direccion: componerDireccion(datos),
       provincia: datos.provincia,
       localidad: datos.localidad,
       codigo_postal: datos.codigo_postal || null,

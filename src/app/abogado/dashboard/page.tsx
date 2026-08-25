@@ -19,6 +19,7 @@ const ESTADO_LABEL: Record<EstadoSolicitud, string> = {
   derivada: "Derivada",
   cerrada: "Cerrada",
   anulada: "Anulada",
+  rechazada: "Rechazada",
 };
 
 async function getKpis(abogadoId: string) {
@@ -93,11 +94,41 @@ export default async function DashboardAbogadoPage() {
   const kpis = await getKpis(abogado.id);
 
   const tarjetas = [
-    { titulo: "Clientes asignados", valor: kpis.clientesUnicos, icon: Users },
-    { titulo: "Casos totales", valor: kpis.totalCasos, icon: ClipboardList },
-    { titulo: "Resueltos", valor: kpis.resueltos, icon: CheckCircle2 },
-    { titulo: "No resueltos", valor: kpis.noResueltos, icon: ClipboardList },
-    { titulo: "Anulados", valor: kpis.anulados, icon: XCircle },
+    {
+      titulo: "Clientes asignados",
+      valor: kpis.clientesUnicos,
+      icon: Users,
+      borde: "border-l-primary",
+      icono: "bg-primary/15 text-primary",
+    },
+    {
+      titulo: "Casos totales",
+      valor: kpis.totalCasos,
+      icon: ClipboardList,
+      borde: "border-l-blue-500",
+      icono: "bg-blue-500/15 text-blue-600",
+    },
+    {
+      titulo: "Resueltos",
+      valor: kpis.resueltos,
+      icon: CheckCircle2,
+      borde: "border-l-emerald-500",
+      icono: "bg-emerald-500/15 text-emerald-600",
+    },
+    {
+      titulo: "No resueltos",
+      valor: kpis.noResueltos,
+      icon: ClipboardList,
+      borde: "border-l-amber-500",
+      icono: "bg-amber-500/15 text-amber-600",
+    },
+    {
+      titulo: "Anulados",
+      valor: kpis.anulados,
+      icon: XCircle,
+      borde: "border-l-destructive",
+      icono: "bg-destructive/15 text-destructive",
+    },
   ];
 
   return (
@@ -109,12 +140,14 @@ export default async function DashboardAbogadoPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {tarjetas.map((t) => (
-          <Card key={t.titulo}>
+          <Card key={t.titulo} className={`border-l-4 ${t.borde}`}>
             <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {t.titulo}
               </CardTitle>
-              <t.icon className="size-4 text-primary" />
+              <span className={`flex size-8 items-center justify-center rounded-full ${t.icono}`}>
+                <t.icon className="size-4" />
+              </span>
             </CardHeader>
             <CardContent>
               <p className="font-heading text-2xl font-semibold">{t.valor}</p>

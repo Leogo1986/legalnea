@@ -118,8 +118,8 @@ export function LoginForm() {
         </form>
       </CardContent>
       <CardFooter className="justify-center text-xs text-muted-foreground">
-        ¿Todavía no tenés cuenta? Se crea automáticamente cuando te aprueban
-        el alta de abogado o al enviar tu solicitud como cliente.
+        ¿Todavía no tenés cuenta? Se habilita cuando el equipo de Legal Nea
+        aprueba tu alta de abogado o tu solicitud como cliente.
       </CardFooter>
     </Card>
   );

@@ -59,7 +59,9 @@ export function DetalleCasoAbogado({ solicitud }: { solicitud: Solicitud }) {
           Volver a solicitudes
         </Button>
         <div className="flex gap-1.5">
-          <Badge variant="outline">{solicitud.estado.replace("_", " ")}</Badge>
+          <Badge variant="outline" className="text-primary border-primary/30">
+            {solicitud.estado.replace("_", " ")}
+          </Badge>
           <Badge variant="outline">{solicitud.prioridad}</Badge>
         </div>
       </div>
@@ -93,13 +95,13 @@ export function DetalleCasoAbogado({ solicitud }: { solicitud: Solicitud }) {
         <TabsContent value="detalle" className="grid gap-4 pt-3">
           <Card>
             <CardContent className="grid gap-3 py-4 text-sm">
-              <div>
-                <p className="font-medium">Motivo de consulta</p>
-                <p className="text-muted-foreground">{solicitud.motivo_consulta}</p>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <p className="mb-1 text-xs font-medium text-muted-foreground">Motivo de consulta</p>
+                <p>{solicitud.motivo_consulta}</p>
               </div>
-              <div>
-                <p className="font-medium">Descripción</p>
-                <p className="text-muted-foreground">{solicitud.descripcion}</p>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <p className="mb-1 text-xs font-medium text-muted-foreground">Descripción</p>
+                <p>{solicitud.descripcion}</p>
               </div>
               <p className="text-xs text-muted-foreground">
                 Recibida el {formatearFecha(solicitud.created_at)}

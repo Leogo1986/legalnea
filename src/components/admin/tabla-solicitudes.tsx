@@ -4,7 +4,16 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Download, Eye, KeyRound, Loader2, Send } from "lucide-react";
+import {
+  Check,
+  Download,
+  Eye,
+  KeyRound,
+  Loader2,
+  MessageCircle,
+  Send,
+  X,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -24,19 +33,25 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ComboboxAbogado, type AbogadoParaAsignar } from "@/components/shared/combobox-abogado";
+import { armarLinkWhatsapp, mensajeSolicitudAprobada } from "@/lib/whatsapp";
 import type { EstadoSolicitud, Prioridad, Rol } from "@/types/database";
 import {
+  aprobarSolicitud,
   asignarAbogado,
   cambiarEstadoSolicitud,
   cambiarPrioridadSolicitud,
   enviarMensajeAdmin,
   obtenerUrlFirmadaAdjunto,
+  rechazarSolicitud,
   resetearPasswordCliente,
 } from "@/app/admin/solicitudes/actions";
 
@@ -70,6 +85,7 @@ const ESTADOS: EstadoSolicitud[] = [
   "resuelta",
   "derivada",
   "cerrada",
+  "rechazada",
 ];
 const PRIORIDADES: Prioridad[] = ["baja", "media", "alta", "urgente"];
 
@@ -78,6 +94,18 @@ const ESTILO_PRIORIDAD: Record<Prioridad, string> = {
   media: "text-blue-600 border-blue-300",
   alta: "text-amber-600 border-amber-300",
   urgente: "text-destructive border-destructive/30",
+};
+
+const ESTILO_ESTADO: Record<EstadoSolicitud, string> = {
+  nueva: "text-amber-600 border-amber-300",
+  en_revision: "text-blue-600 border-blue-300",
+  asignada: "text-violet-600 border-violet-300",
+  en_curso: "text-primary border-primary/30",
+  resuelta: "text-emerald-600 border-emerald-300",
+  derivada: "text-violet-600 border-violet-300",
+  cerrada: "text-muted-foreground",
+  anulada: "text-muted-foreground",
+  rechazada: "text-destructive border-destructive/30",
 };
 
 function formatearFecha(fecha: string) {
@@ -90,16 +118,21 @@ export function TablaSolicitudes({
   solicitudes,
   abogadosAprobados,
   estadoFiltro,
+  siteUrl,
 }: {
   solicitudes: SolicitudAdmin[];
-  abogadosAprobados: { id: string; nombre_completo: string; provincia: string }[];
+  abogadosAprobados: AbogadoParaAsignar[];
   estadoFiltro: EstadoSolicitud | null;
+  siteUrl: string;
 }) {
   const router = useRouter();
   const [detalle, setDetalle] = React.useState<SolicitudAdmin | null>(null);
   const [ocupado, setOcupado] = React.useState(false);
   const [mensaje, setMensaje] = React.useState("");
   const [enviandoMensaje, setEnviandoMensaje] = React.useState(false);
+  const [enAccion, setEnAccion] = React.useState<string | null>(null);
+  const [dialogoRechazo, setDialogoRechazo] = React.useState<SolicitudAdmin | null>(null);
+  const [motivoRechazo, setMotivoRechazo] = React.useState("");
 
   async function enviarMensaje() {
     if (!detalle || !mensaje.trim()) return;
@@ -125,6 +158,23 @@ export function TablaSolicitudes({
     }
     toast.success("Listo.");
     router.refresh();
+  }
+
+  async function ejecutarFila(id: string, fn: () => Promise<{ success: boolean; error?: string }>) {
+    setEnAccion(id);
+    const res = await fn();
+    setEnAccion(null);
+    if (!res.success) {
+      toast.error(res.error ?? "Ocurrió un error.");
+      return;
+    }
+    toast.success("Listo.");
+    router.refresh();
+  }
+
+  function abrirWhatsapp(s: SolicitudAdmin) {
+    const mensaje = mensajeSolicitudAprobada(s.cliente_nombre, s.cliente_email, siteUrl);
+    window.open(armarLinkWhatsapp(s.cliente_telefono, mensaje), "_blank", "noopener,noreferrer");
   }
 
   async function descargarAdjunto(ruta: string) {
@@ -161,7 +211,7 @@ export function TablaSolicitudes({
               <TableHead>Prioridad</TableHead>
               <TableHead>Abogado asignado</TableHead>
               <TableHead>Fecha</TableHead>
-              <TableHead className="text-right">Ver</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -180,7 +230,9 @@ export function TablaSolicitudes({
                 </TableCell>
                 <TableCell>{s.cliente_provincia}</TableCell>
                 <TableCell>
-                  <Badge variant="outline">{s.estado.replace("_", " ")}</Badge>
+                  <Badge variant="outline" className={ESTILO_ESTADO[s.estado]}>
+                    {s.estado.replace("_", " ")}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className={ESTILO_PRIORIDAD[s.prioridad]}>
@@ -190,9 +242,50 @@ export function TablaSolicitudes({
                 <TableCell>{s.abogado_asignado_nombre ?? "—"}</TableCell>
                 <TableCell>{formatearFecha(s.created_at)}</TableCell>
                 <TableCell className="text-right">
-                  <Button size="icon-sm" variant="ghost" onClick={() => setDetalle(s)}>
-                    <Eye className="size-4" />
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    {enAccion === s.id ? (
+                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        {s.estado === "nueva" && (
+                          <>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              title="Aprobar"
+                              onClick={() => ejecutarFila(s.id, () => aprobarSolicitud(s.id))}
+                            >
+                              <Check className="size-4 text-emerald-600" />
+                            </Button>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              title="Rechazar"
+                              onClick={() => {
+                                setMotivoRechazo("");
+                                setDialogoRechazo(s);
+                              }}
+                            >
+                              <X className="size-4 text-destructive" />
+                            </Button>
+                          </>
+                        )}
+                        {s.estado !== "nueva" && s.estado !== "rechazada" && (
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            title="Avisar aprobación por WhatsApp"
+                            onClick={() => abrirWhatsapp(s)}
+                          >
+                            <MessageCircle className="size-4 text-emerald-600" />
+                          </Button>
+                        )}
+                        <Button size="icon-sm" variant="ghost" title="Ver detalle" onClick={() => setDetalle(s)}>
+                          <Eye className="size-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -209,7 +302,7 @@ export function TablaSolicitudes({
               </DialogHeader>
 
               <div className="grid gap-4 text-sm">
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                <div className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
                   <span>{detalle.cliente_email}</span>
                   <span>{detalle.cliente_telefono}</span>
                   <span>{detalle.cliente_provincia}</span>
@@ -280,21 +373,11 @@ export function TablaSolicitudes({
 
                 <div className="grid gap-1.5">
                   <p className="text-xs font-medium text-muted-foreground">Asignar abogado</p>
-                  <Select
-                    value={detalle.abogado_asignado_id ?? undefined}
-                    onValueChange={(v) => v && conFeedback(() => asignarAbogado(detalle.id, v))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sin asignar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {abogadosAprobados.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.nombre_completo} — {a.provincia}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ComboboxAbogado
+                    abogados={abogadosAprobados}
+                    value={detalle.abogado_asignado_id}
+                    onChange={(id) => conFeedback(() => asignarAbogado(detalle.id, id))}
+                  />
                 </div>
 
                 <Button
@@ -345,6 +428,36 @@ export function TablaSolicitudes({
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!dialogoRechazo} onOpenChange={(open) => !open && setDialogoRechazo(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rechazar solicitud de {dialogoRechazo?.cliente_nombre}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-1.5">
+            <Label htmlFor="motivo-rechazo">Motivo (opcional, queda registrado)</Label>
+            <Textarea
+              id="motivo-rechazo"
+              value={motivoRechazo}
+              onChange={(e) => setMotivoRechazo(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!dialogoRechazo) return;
+                const id = dialogoRechazo.id;
+                setDialogoRechazo(null);
+                await ejecutarFila(id, () => rechazarSolicitud(id, motivoRechazo));
+              }}
+            >
+              Confirmar rechazo
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

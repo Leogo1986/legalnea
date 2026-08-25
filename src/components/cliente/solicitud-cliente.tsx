@@ -102,9 +102,9 @@ export function SolicitudCliente({ solicitud }: { solicitud: Solicitud }) {
           </ol>
         )}
 
-        <p className="text-sm">{solicitud.motivo_consulta}</p>
+        <div className="rounded-lg border bg-muted/30 p-3 text-sm">{solicitud.motivo_consulta}</div>
 
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3 text-sm">
           <UserRound className="size-4 text-muted-foreground" />
           {solicitud.abogadoNombre
             ? `Abogado asignado: ${solicitud.abogadoNombre}`

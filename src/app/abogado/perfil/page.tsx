@@ -21,7 +21,7 @@ export default async function PerfilAbogadoPage() {
   const { data: abogado } = await supabase
     .from("abogados")
     .select(
-      "nombre_completo, email, telefono, direccion, provincia, localidad, codigo_postal, matricula_federal, matricula_provincial, estado, motivo_rechazo"
+      "nombre_completo, email, telefono, calle, altura, piso, dpto, provincia, localidad, codigo_postal, matricula_federal, matricula_provincial, estado, motivo_rechazo"
     )
     .eq("user_id", user.id)
     .single();

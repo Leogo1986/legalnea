@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComboboxProvincia } from "@/components/shared/combobox-provincia";
+import { DomicilioFields } from "@/components/shared/domicilio-fields";
+import { SelectLocalidad } from "@/components/shared/select-localidad";
 import {
   abogadoDatosSchema,
   validarAlMenosUnaMatricula,
@@ -31,7 +33,10 @@ export function PerfilAbogadoForm({
     nombre_completo: string;
     email: string;
     telefono: string;
-    direccion: string | null;
+    calle: string | null;
+    altura: string | null;
+    piso: string | null;
+    dpto: string | null;
     provincia: string;
     localidad: string;
     codigo_postal: string | null;
@@ -43,13 +48,18 @@ export function PerfilAbogadoForm({
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<EditarPerfilInput>({
     resolver: zodResolver(editarPerfilSchema),
     defaultValues: {
       nombre_completo: abogado.nombre_completo,
       telefono: abogado.telefono,
-      direccion: abogado.direccion ?? "",
+      calle: abogado.calle ?? "",
+      altura: abogado.altura ?? "",
+      piso: abogado.piso ?? "",
+      dpto: abogado.dpto ?? "",
       provincia: abogado.provincia,
       localidad: abogado.localidad,
       codigo_postal: abogado.codigo_postal ?? "",
@@ -89,19 +99,16 @@ export function PerfilAbogadoForm({
               <p className="text-sm text-destructive">{errors.nombre_completo.message}</p>
             )}
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-1.5">
-              <Label htmlFor="telefono">Celular / WhatsApp</Label>
-              <Input id="telefono" {...register("telefono")} />
-              {errors.telefono && (
-                <p className="text-sm text-destructive">{errors.telefono.message}</p>
-              )}
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="direccion">Domicilio</Label>
-              <Input id="direccion" {...register("direccion")} />
-            </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="telefono">Celular / WhatsApp</Label>
+            <Input id="telefono" {...register("telefono")} />
+            {errors.telefono && (
+              <p className="text-sm text-destructive">{errors.telefono.message}</p>
+            )}
           </div>
+
+          <DomicilioFields register={register} errors={errors} />
+
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="grid gap-1.5">
               <Label htmlFor="provincia">Provincia</Label>
@@ -109,13 +116,29 @@ export function PerfilAbogadoForm({
                 control={control}
                 name="provincia"
                 render={({ field }) => (
-                  <ComboboxProvincia value={field.value} onChange={field.onChange} />
+                  <ComboboxProvincia
+                    value={field.value}
+                    onChange={(v) => {
+                      field.onChange(v);
+                      setValue("localidad", "", { shouldValidate: true });
+                    }}
+                  />
                 )}
               />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="localidad">Localidad</Label>
-              <Input id="localidad" {...register("localidad")} />
+              <Controller
+                control={control}
+                name="localidad"
+                render={({ field }) => (
+                  <SelectLocalidad
+                    provincia={watch("provincia")}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="codigo_postal">Código postal</Label>

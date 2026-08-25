@@ -22,6 +22,14 @@ export const emailSchema = z
 // refinements") — por eso el objeto base se exporta aparte, para que
 // `perfil-abogado-form.tsx`/`perfil/actions.ts` puedan omitir campos y
 // refinar de nuevo, en vez de partir de `abogadoAltaSchema` ya refinado.
+export const calleSchema = z.string().trim().min(2, "Ingresá el nombre de la calle").max(150);
+export const alturaSchema = z
+  .string()
+  .trim()
+  .min(1, "Ingresá la altura")
+  .regex(/^\d+$/, "La altura es solo numérica");
+export const pisoDptoSchema = z.string().trim().max(20).optional().or(z.literal(""));
+
 export const abogadoDatosSchema = z.object({
   nombre_completo: z
     .string()
@@ -29,7 +37,10 @@ export const abogadoDatosSchema = z.object({
     .min(3, "Ingresá tu nombre y apellido completo")
     .max(150),
   telefono: telefonoArgentinoSchema,
-  direccion: z.string().trim().min(3, "Ingresá tu domicilio").max(255),
+  calle: calleSchema,
+  altura: alturaSchema,
+  piso: pisoDptoSchema,
+  dpto: pisoDptoSchema,
   provincia: z.string().trim().min(2, "Seleccioná o ingresá tu provincia"),
   localidad: z.string().trim().min(2, "Ingresá tu localidad"),
   codigo_postal: z.string().trim().max(15).optional().or(z.literal("")),

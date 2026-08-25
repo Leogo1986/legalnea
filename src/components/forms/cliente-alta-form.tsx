@@ -19,9 +19,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ComboboxProvincia } from "@/components/shared/combobox-provincia";
-import { DomicilioAutocomplete } from "@/components/shared/domicilio-autocomplete";
+import { DomicilioFields } from "@/components/shared/domicilio-fields";
+import { SelectLocalidad } from "@/components/shared/select-localidad";
 import { FileDropzone } from "@/components/shared/file-dropzone";
-import type { SugerenciaDireccion } from "@/app/api/geocode/route";
 import { clienteAltaSchema, type ClienteAltaInput } from "@/lib/validation/cliente.schema";
 import { crearSolicitudCliente } from "@/app/(public)/clientes/nuevo/actions";
 import { CONTACTO_WHATSAPP_URL } from "@/lib/constants";
@@ -30,7 +30,10 @@ const valoresPorDefecto: ClienteAltaInput = {
   nombre_completo: "",
   telefono: "",
   email: "",
-  direccion: "",
+  calle: "",
+  altura: "",
+  piso: "",
+  dpto: "",
   provincia: "",
   localidad: "",
   motivo_consulta: "",
@@ -43,6 +46,7 @@ export function ClienteAltaForm() {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<ClienteAltaInput>({
     resolver: zodResolver(clienteAltaSchema),
@@ -59,7 +63,10 @@ export function ClienteAltaForm() {
     formData.set("nombre_completo", datos.nombre_completo);
     formData.set("telefono", datos.telefono);
     formData.set("email", datos.email);
-    formData.set("direccion", datos.direccion);
+    formData.set("calle", datos.calle);
+    formData.set("altura", datos.altura);
+    formData.set("piso", datos.piso ?? "");
+    formData.set("dpto", datos.dpto ?? "");
     formData.set("provincia", datos.provincia);
     formData.set("localidad", datos.localidad);
     formData.set("motivo_consulta", datos.motivo_consulta);
@@ -86,10 +93,11 @@ export function ClienteAltaForm() {
           <CheckCircle2 className="size-12 text-primary" />
           <h2 className="font-heading text-lg font-semibold">¡Listo!</h2>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Tu solicitud fue recibida y ya la estamos derivando a un abogado
-            especialista de nuestra red PROBONO para que la analice. Te vamos
-            a contactar a la brevedad por el medio que nos indicaste. Gracias
-            por confiar en nosotros.
+            Tu solicitud fue recibida. Va a estar sujeta a la aprobación del
+            equipo del estudio jurídico Legal Nea, que va a evaluarla junto
+            con un abogado especialista de nuestra red PROBONO. Te vamos a
+            notificar la novedad en un plazo de hasta 48 horas. ¡Gracias por
+            confiar en nosotros!
           </p>
           <Button
             variant="ghost"
@@ -156,27 +164,7 @@ export function ClienteAltaForm() {
             </div>
           </div>
 
-          <div className="grid gap-1.5">
-            <Label htmlFor="direccion">Domicilio</Label>
-            <Controller
-              control={control}
-              name="direccion"
-              render={({ field }) => (
-                <DomicilioAutocomplete
-                  id="direccion"
-                  value={field.value}
-                  onChange={field.onChange}
-                  onSugerenciaSeleccionada={(s: SugerenciaDireccion) => {
-                    if (s.provincia) setValue("provincia", s.provincia, { shouldValidate: true });
-                    if (s.localidad) setValue("localidad", s.localidad, { shouldValidate: true });
-                  }}
-                />
-              )}
-            />
-            {errors.direccion && (
-              <p className="text-sm text-destructive">{errors.direccion.message}</p>
-            )}
-          </div>
+          <DomicilioFields register={register} errors={errors} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
@@ -185,7 +173,14 @@ export function ClienteAltaForm() {
                 control={control}
                 name="provincia"
                 render={({ field }) => (
-                  <ComboboxProvincia id="provincia" value={field.value} onChange={field.onChange} />
+                  <ComboboxProvincia
+                    id="provincia"
+                    value={field.value}
+                    onChange={(v) => {
+                      field.onChange(v);
+                      setValue("localidad", "", { shouldValidate: true });
+                    }}
+                  />
                 )}
               />
               {errors.provincia && (
@@ -194,10 +189,17 @@ export function ClienteAltaForm() {
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="localidad">Localidad</Label>
-              <Input
-                id="localidad"
-                aria-invalid={!!errors.localidad}
-                {...register("localidad")}
+              <Controller
+                control={control}
+                name="localidad"
+                render={({ field }) => (
+                  <SelectLocalidad
+                    id="localidad"
+                    provincia={watch("provincia")}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
               />
               {errors.localidad && (
                 <p className="text-sm text-destructive">{errors.localidad.message}</p>

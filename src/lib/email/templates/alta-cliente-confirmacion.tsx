@@ -29,8 +29,9 @@ export function AltaClienteConfirmacionEmail({
         {solicitudId}
       </Text>
       <Text>
-        Un especialista de nuestra red PROBONO va a analizar tu caso y te
-        vamos a contactar a la brevedad por el medio que nos indicaste.
+        Tu solicitud va a estar sujeta a la aprobación de nuestro equipo, que
+        la va a evaluar junto con un especialista de la red PROBONO. Te
+        vamos a notificar la novedad en un plazo de hasta 48 horas.
       </Text>
       <Text>Gracias por confiar en nosotros.</Text>
     </EmailLayout>

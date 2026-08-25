@@ -13,8 +13,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComboboxProvincia } from "@/components/shared/combobox-provincia";
-import { DomicilioAutocomplete } from "@/components/shared/domicilio-autocomplete";
-import type { SugerenciaDireccion } from "@/app/api/geocode/route";
+import { DomicilioFields } from "@/components/shared/domicilio-fields";
+import { SelectLocalidad } from "@/components/shared/select-localidad";
 import { DeclaracionJuradaModal } from "@/components/forms/declaracion-jurada-modal";
 import { MartilloExito } from "@/components/forms/martillo-exito";
 import { TarjetaAbogado } from "@/components/public/tarjeta-abogado";
@@ -43,7 +43,10 @@ type AbogadoExito = {
 const valoresPorDefecto: AbogadoAltaInput = {
   nombre_completo: "",
   telefono: "",
-  direccion: "",
+  calle: "",
+  altura: "",
+  piso: "",
+  dpto: "",
   provincia: "",
   localidad: "",
   codigo_postal: "",
@@ -59,6 +62,7 @@ export function AbogadoAltaForm({ especialidades }: { especialidades: Especialid
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors, isSubmitting: validando },
   } = useForm<AbogadoAltaInput>({
     resolver: zodResolver(abogadoAltaSchema),
@@ -193,28 +197,7 @@ export function AbogadoAltaForm({ especialidades }: { especialidades: Especialid
               )}
             </div>
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="direccion">Domicilio</Label>
-              <Controller
-                control={control}
-                name="direccion"
-                render={({ field }) => (
-                  <DomicilioAutocomplete
-                    id="direccion"
-                    value={field.value}
-                    onChange={field.onChange}
-                    onSugerenciaSeleccionada={(s: SugerenciaDireccion) => {
-                      if (s.provincia) setValue("provincia", s.provincia, { shouldValidate: true });
-                      if (s.localidad) setValue("localidad", s.localidad, { shouldValidate: true });
-                      if (s.codigoPostal) setValue("codigo_postal", s.codigoPostal);
-                    }}
-                  />
-                )}
-              />
-              {errors.direccion && (
-                <p className="text-sm text-destructive">{errors.direccion.message}</p>
-              )}
-            </div>
+            <DomicilioFields register={register} errors={errors} />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-1.5">
@@ -223,7 +206,14 @@ export function AbogadoAltaForm({ especialidades }: { especialidades: Especialid
                   control={control}
                   name="provincia"
                   render={({ field }) => (
-                    <ComboboxProvincia id="provincia" value={field.value} onChange={field.onChange} />
+                    <ComboboxProvincia
+                      id="provincia"
+                      value={field.value}
+                      onChange={(v) => {
+                        field.onChange(v);
+                        setValue("localidad", "", { shouldValidate: true });
+                      }}
+                    />
                   )}
                 />
                 {errors.provincia && (
@@ -233,10 +223,17 @@ export function AbogadoAltaForm({ especialidades }: { especialidades: Especialid
 
               <div className="grid gap-1.5">
                 <Label htmlFor="localidad">Localidad</Label>
-                <Input
-                  id="localidad"
-                  aria-invalid={!!errors.localidad}
-                  {...register("localidad")}
+                <Controller
+                  control={control}
+                  name="localidad"
+                  render={({ field }) => (
+                    <SelectLocalidad
+                      id="localidad"
+                      provincia={watch("provincia")}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
                 {errors.localidad && (
                   <p className="text-sm text-destructive">{errors.localidad.message}</p>

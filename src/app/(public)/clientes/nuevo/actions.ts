@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { componerDireccion } from "@/lib/domicilio";
 import {
   clienteAltaSchema,
   validarArchivoAdjunto,
@@ -8,61 +9,10 @@ import {
 } from "@/lib/validation/cliente.schema";
 import { enviarAltaClienteConfirmacion } from "@/lib/email/enviar";
 import { notificarAdmin } from "@/lib/notificaciones/notificar-admin";
-import { getSiteUrl } from "@/lib/site-url";
 
 export type CrearSolicitudResult =
   | { success: true; solicitudId: string }
   | { success: false; error: string };
-
-type AdminClient = ReturnType<typeof createAdminClient>;
-
-// Crea (o vincula, si ya existe) la cuenta de Auth del cliente en el momento
-// del alta — a diferencia del abogado, acá no está gateado por aprobación:
-// el cliente tiene que poder loguear apenas manda su solicitud para ver su
-// estado (así lo dice el propio texto de /login). Mismo fix que en
-// admin/abogados/actions.ts: confirmamos el email nosotros mismos, porque
-// generateLink({type:"invite"}) deja la cuenta sin confirmar hasta que se
-// clickea el link del mail, y ese mail puede no llegar (Resend sin
-// configurar todavía). No bloqueante: si esto falla, la solicitud ya quedó
-// guardada igual y el admin puede resolverlo a mano.
-async function vincularCuentaCliente(
-  supabase: AdminClient,
-  clienteId: string,
-  email: string,
-  nombreCompleto: string
-) {
-  try {
-    const { data: perfilExistente } = await supabase
-      .from("perfiles")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (perfilExistente) {
-      await supabase.from("clientes").update({ user_id: perfilExistente.id }).eq("id", clienteId);
-      return;
-    }
-
-    const { data: invitado, error: errorInvite } = await supabase.auth.admin.generateLink({
-      type: "invite",
-      email,
-      options: { redirectTo: `${getSiteUrl()}/auth/confirm?next=/actualizar-password` },
-    });
-
-    if (errorInvite || !invitado?.user) return;
-
-    await supabase.auth.admin.updateUserById(invitado.user.id, { email_confirm: true });
-    await supabase.from("perfiles").upsert({
-      id: invitado.user.id,
-      rol: "cliente",
-      nombre_completo: nombreCompleto,
-      email,
-    });
-    await supabase.from("clientes").update({ user_id: invitado.user.id }).eq("id", clienteId);
-  } catch (error) {
-    console.error("[vincularCuentaCliente] no se pudo crear/vincular la cuenta:", error);
-  }
-}
 
 export async function crearSolicitudCliente(
   formData: FormData
@@ -71,7 +21,10 @@ export async function crearSolicitudCliente(
     nombre_completo: String(formData.get("nombre_completo") ?? ""),
     telefono: String(formData.get("telefono") ?? ""),
     email: String(formData.get("email") ?? ""),
-    direccion: String(formData.get("direccion") ?? ""),
+    calle: String(formData.get("calle") ?? ""),
+    altura: String(formData.get("altura") ?? ""),
+    piso: String(formData.get("piso") ?? ""),
+    dpto: String(formData.get("dpto") ?? ""),
     provincia: String(formData.get("provincia") ?? ""),
     localidad: String(formData.get("localidad") ?? ""),
     motivo_consulta: String(formData.get("motivo_consulta") ?? ""),
@@ -111,7 +64,11 @@ export async function crearSolicitudCliente(
       nombre_completo: datos.nombre_completo,
       telefono: datos.telefono,
       email: datos.email,
-      direccion: datos.direccion,
+      calle: datos.calle,
+      altura: datos.altura,
+      piso: datos.piso || null,
+      dpto: datos.dpto || null,
+      direccion: componerDireccion(datos),
       provincia: datos.provincia,
       localidad: datos.localidad,
       user_id: null,
@@ -127,8 +84,11 @@ export async function crearSolicitudCliente(
     };
   }
 
-  await vincularCuentaCliente(supabase, cliente.id, datos.email, datos.nombre_completo);
-
+  // La cuenta de Auth del cliente NO se crea acá: recién se crea cuando el
+  // admin aprueba la solicitud (admin/solicitudes/actions.ts,
+  // aprobarSolicitud → vincularCuentaCliente). Es el filtro real: cualquiera
+  // puede mandar este formulario, pero solo entra a su cuenta quien Legal
+  // Nea aprobó.
   const { data: solicitud, error: errorSolicitud } = await supabase
     .from("solicitudes")
     .insert({
