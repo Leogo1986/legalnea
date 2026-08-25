@@ -2,19 +2,14 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Check, Download, Loader2, Paperclip, Send, UserRound } from "lucide-react";
+import { Check, Download, Loader2, Paperclip, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { TimelineCaso } from "@/components/casos/timeline-caso";
 import { cn } from "@/lib/utils";
 import type { EstadoSolicitud, Rol } from "@/types/database";
-import {
-  agregarAdjuntoPropio,
-  enviarMensajeCliente,
-  obtenerUrlFirmadaCliente,
-} from "@/app/cliente/solicitud/actions";
+import { agregarAdjuntoPropio, obtenerUrlFirmadaCliente } from "@/app/cliente/solicitud/actions";
 
 const PASOS: { estado: EstadoSolicitud; label: string }[] = [
   { estado: "nueva", label: "Recibida" },
@@ -24,12 +19,6 @@ const PASOS: { estado: EstadoSolicitud; label: string }[] = [
   { estado: "resuelta", label: "Resuelta" },
 ];
 
-const ROL_LABEL: Record<Rol, string> = {
-  admin: "Legal Nea",
-  abogado: "Tu abogado",
-  cliente: "Vos",
-};
-
 type Solicitud = {
   id: string;
   motivo_consulta: string;
@@ -37,7 +26,9 @@ type Solicitud = {
   created_at: string;
   abogadoNombre: string | null;
   adjuntos: { id: string; nombre: string; ruta: string }[];
-  mensajes: { id: string; contenido: string; autorRol: Rol; createdAt: string }[];
+  // El chat es solo admin↔abogado por ahora (el cliente no lo ve todavía),
+  // pero la solicitud igual trae `mensajes` del server — se deja el campo
+  // por si se reactiva más adelante, simplemente no se renderiza acá.
   eventos: { id: string; etapa: string; nota: string | null; autorRol: Rol; createdAt: string }[];
 };
 
@@ -48,26 +39,11 @@ function formatearFecha(fecha: string) {
 }
 
 export function SolicitudCliente({ solicitud }: { solicitud: Solicitud }) {
-  const [mensaje, setMensaje] = React.useState("");
-  const [enviandoMensaje, setEnviandoMensaje] = React.useState(false);
   const [subiendoArchivo, setSubiendoArchivo] = React.useState(false);
   const inputArchivoRef = React.useRef<HTMLInputElement>(null);
 
   const esTerminalAlterno = solicitud.estado === "derivada" || solicitud.estado === "cerrada";
   const pasoActual = PASOS.findIndex((p) => p.estado === solicitud.estado);
-
-  async function enviarMensaje() {
-    if (!mensaje.trim()) return;
-    setEnviandoMensaje(true);
-    const res = await enviarMensajeCliente(solicitud.id, mensaje);
-    setEnviandoMensaje(false);
-    if (!res.success) {
-      toast.error(res.error);
-      return;
-    }
-    setMensaje("");
-    toast.success("Mensaje enviado.");
-  }
 
   async function subirArchivo(file: File) {
     setSubiendoArchivo(true);
@@ -176,36 +152,6 @@ export function SolicitudCliente({ solicitud }: { solicitud: Solicitud }) {
             <TimelineCaso eventos={solicitud.eventos} soloLectura />
           </div>
         )}
-
-        <div className="grid gap-2 rounded-lg border p-3">
-          <p className="text-xs font-medium text-muted-foreground">Mensajes</p>
-          {solicitud.mensajes.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Todavía no hay mensajes.</p>
-          ) : (
-            <div className="grid gap-2">
-              {solicitud.mensajes.map((m) => (
-                <div key={m.id} className="rounded-lg bg-muted/40 px-3 py-2 text-sm">
-                  <p className="mb-0.5 text-xs font-medium text-muted-foreground">
-                    {ROL_LABEL[m.autorRol]} · {formatearFecha(m.createdAt)}
-                  </p>
-                  {m.contenido}
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Textarea
-              value={mensaje}
-              onChange={(e) => setMensaje(e.target.value)}
-              placeholder="Escribí un mensaje..."
-              rows={2}
-              className="flex-1"
-            />
-            <Button size="icon" onClick={enviarMensaje} disabled={enviandoMensaje} className="self-end">
-              {enviandoMensaje ? <Loader2 className="animate-spin" /> : <Send className="size-4" />}
-            </Button>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
