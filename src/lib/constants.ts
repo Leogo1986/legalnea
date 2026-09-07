@@ -8,9 +8,3 @@ export const CONTACTO_TELEFONO_E164 = "5493795089816";
 export const CONTACTO_WHATSAPP_URL = `https://wa.me/${CONTACTO_TELEFONO_E164}`;
 
 export const ADMIN_EMAIL = "bitcorrientes@gmail.com";
-
-export const NAV_LINKS = [
-  { href: "/", label: "Inicio" },
-  { href: "/abogados/nuevo", label: "Sumate como abogado" },
-  { href: "/clientes/nuevo", label: "Pedí ayuda legal" },
-] as const;

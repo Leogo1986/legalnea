@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { NAV_LINKS, SITE_NAME } from "@/lib/constants";
+import { SITE_NAME } from "@/lib/constants";
 
 export function SiteHeader() {
   return (
@@ -14,17 +14,12 @@ export function SiteHeader() {
           {SITE_NAME}
         </Link>
 
-        <nav className="hidden items-center gap-1 sm:flex">
-          {NAV_LINKS.map((link) => (
-            <Button
-              key={link.href}
-              variant="ghost"
-              render={<Link href={link.href} />}
-            >
-              {link.label}
-            </Button>
-          ))}
-        </nav>
+        <div className="hidden items-center gap-2 sm:flex">
+          <Button render={<Link href="/clientes/nuevo" />}>Necesito ayuda legal</Button>
+          <Button variant="outline" render={<Link href="/abogados/nuevo" />}>
+            Soy abogado, quiero sumarme
+          </Button>
+        </div>
 
         <div className="flex items-center gap-2">
           <Button
