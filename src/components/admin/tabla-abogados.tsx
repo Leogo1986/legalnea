@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { iniciales } from "@/lib/estilos-estado";
 import type { EstadoAbogado } from "@/types/database";
 import {
   aprobarAbogado,
@@ -49,10 +51,10 @@ export type AbogadoAdmin = {
 };
 
 const ESTILO_ESTADO: Record<EstadoAbogado, string> = {
-  pendiente: "text-amber-600 border-amber-300",
-  aprobado: "text-emerald-600 border-emerald-300",
-  rechazado: "text-destructive border-destructive/30",
-  inactivo: "text-muted-foreground",
+  pendiente: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  aprobado: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  rechazado: "bg-destructive/15 text-destructive",
+  inactivo: "bg-muted text-muted-foreground",
 };
 
 function formatearFecha(fecha: string) {
@@ -152,15 +154,22 @@ export function TablaAbogados({
               const cargando = enAccion === a.id;
               return (
                 <TableRow key={a.id}>
-                  <TableCell>
-                    <div className="font-medium">{a.nombre_completo}</div>
-                    <div className="text-xs text-muted-foreground">{a.email}</div>
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar size="sm" className="shrink-0">
+                        <AvatarFallback>{iniciales(a.nombre_completo)}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{a.nombre_completo}</div>
+                        <div className="truncate text-xs text-muted-foreground">{a.email}</div>
+                      </div>
+                    </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-3">
                     {a.provincia}
                     <div className="text-xs text-muted-foreground">{a.localidad}</div>
                   </TableCell>
-                  <TableCell className="max-w-56 whitespace-normal">
+                  <TableCell className="max-w-56 whitespace-normal py-3">
                     <div className="flex flex-wrap gap-1">
                       {a.especialidades.slice(0, 3).map((e) => (
                         <Badge key={e} variant="secondary" className="text-[0.65rem]">
@@ -174,21 +183,19 @@ export function TablaAbogados({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={ESTILO_ESTADO[a.estado]}>
-                      {a.estado}
-                    </Badge>
+                  <TableCell className="py-3">
+                    <Badge className={ESTILO_ESTADO[a.estado]}>{a.estado}</Badge>
                     {a.estado === "rechazado" && a.motivo_rechazo && (
                       <p className="mt-1 max-w-40 truncate text-xs text-muted-foreground" title={a.motivo_rechazo}>
                         {a.motivo_rechazo}
                       </p>
                     )}
                   </TableCell>
-                  <TableCell>{formatearFecha(a.fecha_alta)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
+                  <TableCell className="py-3 text-muted-foreground">{formatearFecha(a.fecha_alta)}</TableCell>
+                  <TableCell className="py-3 text-right">
+                    <div className="inline-flex items-center gap-0.5 rounded-lg border p-1">
                       {cargando ? (
-                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                        <Loader2 className="mx-2 size-4 animate-spin text-muted-foreground" />
                       ) : (
                         <>
                           {a.estado === "pendiente" && (

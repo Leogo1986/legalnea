@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -44,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { ComboboxAbogado, type AbogadoParaAsignar } from "@/components/shared/combobox-abogado";
 import { armarLinkWhatsapp, mensajeSolicitudAprobada } from "@/lib/whatsapp";
+import { ESTILO_ESTADO_SOLICITUD, ESTILO_PRIORIDAD_SOLICITUD, iniciales } from "@/lib/estilos-estado";
 import type { EstadoSolicitud, Prioridad, Rol } from "@/types/database";
 import {
   aprobarSolicitud,
@@ -89,25 +91,6 @@ const ESTADOS: EstadoSolicitud[] = [
   "rechazada",
 ];
 const PRIORIDADES: Prioridad[] = ["baja", "media", "alta", "urgente"];
-
-const ESTILO_PRIORIDAD: Record<Prioridad, string> = {
-  baja: "text-muted-foreground",
-  media: "text-blue-600 border-blue-300",
-  alta: "text-amber-600 border-amber-300",
-  urgente: "text-destructive border-destructive/30",
-};
-
-const ESTILO_ESTADO: Record<EstadoSolicitud, string> = {
-  nueva: "text-amber-600 border-amber-300",
-  en_revision: "text-blue-600 border-blue-300",
-  asignada: "text-violet-600 border-violet-300",
-  en_curso: "text-primary border-primary/30",
-  resuelta: "text-emerald-600 border-emerald-300",
-  derivada: "text-violet-600 border-violet-300",
-  cerrada: "text-muted-foreground",
-  anulada: "text-muted-foreground",
-  rechazada: "text-destructive border-destructive/30",
-};
 
 function formatearFecha(fecha: string) {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(
@@ -286,27 +269,30 @@ export function TablaSolicitudes({
             )}
             {solicitudes.map((s) => (
               <TableRow key={s.id}>
-                <TableCell>
-                  <div className="font-medium">{s.cliente_nombre}</div>
-                  <div className="text-xs text-muted-foreground">{s.cliente_email}</div>
+                <TableCell className="py-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar size="sm" className="shrink-0">
+                      <AvatarFallback>{iniciales(s.cliente_nombre)}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{s.cliente_nombre}</div>
+                      <div className="truncate text-xs text-muted-foreground">{s.cliente_email}</div>
+                    </div>
+                  </div>
                 </TableCell>
-                <TableCell>{s.cliente_provincia}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={ESTILO_ESTADO[s.estado]}>
-                    {s.estado.replace("_", " ")}
-                  </Badge>
+                <TableCell className="py-3">{s.cliente_provincia}</TableCell>
+                <TableCell className="py-3">
+                  <Badge className={ESTILO_ESTADO_SOLICITUD[s.estado]}>{s.estado.replace("_", " ")}</Badge>
                 </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={ESTILO_PRIORIDAD[s.prioridad]}>
-                    {s.prioridad}
-                  </Badge>
+                <TableCell className="py-3">
+                  <Badge className={ESTILO_PRIORIDAD_SOLICITUD[s.prioridad]}>{s.prioridad}</Badge>
                 </TableCell>
-                <TableCell>{s.abogado_asignado_nombre ?? "—"}</TableCell>
-                <TableCell>{formatearFecha(s.created_at)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
+                <TableCell className="py-3">{s.abogado_asignado_nombre ?? "—"}</TableCell>
+                <TableCell className="py-3 text-muted-foreground">{formatearFecha(s.created_at)}</TableCell>
+                <TableCell className="py-3 text-right">
+                  <div className="inline-flex items-center gap-0.5 rounded-lg border p-1">
                     {enAccion === s.id ? (
-                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      <Loader2 className="mx-2 size-4 animate-spin text-muted-foreground" />
                     ) : (
                       <>
                         {s.estado === "nueva" && (

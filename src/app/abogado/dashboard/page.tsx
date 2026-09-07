@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CheckCircle2, ClipboardList, Users, XCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardCasosChart } from "@/components/abogado/dashboard-casos-chart";
@@ -94,42 +94,12 @@ export default async function DashboardAbogadoPage() {
   const kpis = await getKpis(abogado.id);
 
   const tarjetas = [
-    {
-      titulo: "Clientes asignados",
-      valor: kpis.clientesUnicos,
-      icon: Users,
-      borde: "border-l-primary",
-      icono: "bg-primary/15 text-primary",
-    },
-    {
-      titulo: "Casos totales",
-      valor: kpis.totalCasos,
-      icon: ClipboardList,
-      borde: "border-l-blue-500",
-      icono: "bg-blue-500/15 text-blue-600",
-    },
-    {
-      titulo: "Resueltos",
-      valor: kpis.resueltos,
-      icon: CheckCircle2,
-      borde: "border-l-emerald-500",
-      icono: "bg-emerald-500/15 text-emerald-600",
-    },
-    {
-      titulo: "No resueltos",
-      valor: kpis.noResueltos,
-      icon: ClipboardList,
-      borde: "border-l-amber-500",
-      icono: "bg-amber-500/15 text-amber-600",
-    },
-    {
-      titulo: "Anulados",
-      valor: kpis.anulados,
-      icon: XCircle,
-      borde: "border-l-destructive",
-      icono: "bg-destructive/15 text-destructive",
-    },
-  ];
+    { titulo: "Clientes asignados", valor: kpis.clientesUnicos, icon: Users, color: "primary" },
+    { titulo: "Casos totales", valor: kpis.totalCasos, icon: ClipboardList, color: "blue" },
+    { titulo: "Resueltos", valor: kpis.resueltos, icon: CheckCircle2, color: "emerald" },
+    { titulo: "No resueltos", valor: kpis.noResueltos, icon: ClipboardList, color: "amber" },
+    { titulo: "Anulados", valor: kpis.anulados, icon: XCircle, color: "destructive" },
+  ] as const;
 
   return (
     <div className="grid gap-6">
@@ -140,19 +110,7 @@ export default async function DashboardAbogadoPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {tarjetas.map((t) => (
-          <Card key={t.titulo} className={`border-l-4 ${t.borde}`}>
-            <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {t.titulo}
-              </CardTitle>
-              <span className={`flex size-8 items-center justify-center rounded-full ${t.icono}`}>
-                <t.icon className="size-4" />
-              </span>
-            </CardHeader>
-            <CardContent>
-              <p className="font-heading text-2xl font-semibold">{t.valor}</p>
-            </CardContent>
-          </Card>
+          <StatCard key={t.titulo} title={t.titulo} value={t.valor} icon={t.icon} color={t.color} />
         ))}
       </div>
 

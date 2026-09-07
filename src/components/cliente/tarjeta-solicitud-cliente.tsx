@@ -2,22 +2,8 @@ import Link from "next/link";
 import { ChevronRight, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { ESTILO_ESTADO_SOLICITUD } from "@/lib/estilos-estado";
 import type { EstadoSolicitud } from "@/types/database";
-
-// Estilo de badge por estado — mismo criterio de color que se usa en el
-// panel de admin (tabla-solicitudes.tsx) para que el cliente vea la misma
-// semántica de colores en todas partes.
-const ESTILO_ESTADO: Record<EstadoSolicitud, string> = {
-  nueva: "text-amber-600 border-amber-300",
-  en_revision: "text-blue-600 border-blue-300",
-  asignada: "text-violet-600 border-violet-300",
-  en_curso: "text-primary border-primary/30",
-  resuelta: "text-emerald-600 border-emerald-300",
-  derivada: "text-violet-600 border-violet-300",
-  cerrada: "text-muted-foreground",
-  anulada: "text-muted-foreground",
-  rechazada: "text-destructive border-destructive/30",
-};
 
 export const ESTADO_LABEL_CLIENTE: Record<EstadoSolicitud, string> = {
   nueva: "Recibida",
@@ -54,7 +40,7 @@ export function TarjetaSolicitudCliente({
         <CardContent className="flex items-center gap-3 py-4">
           <div className="min-w-0 flex-1">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className={ESTILO_ESTADO[solicitud.estado]}>
+              <Badge className={ESTILO_ESTADO_SOLICITUD[solicitud.estado]}>
                 {ESTADO_LABEL_CLIENTE[solicitud.estado]}
               </Badge>
               <span className="text-xs text-muted-foreground">

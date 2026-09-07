@@ -82,14 +82,18 @@
   --chart-4: oklch(0.63 0.19 30);
   --chart-5: oklch(0.55 0.15 300);
   --radius: 0.625rem;
-  --sidebar: oklch(0.97 0.008 250);
-  --sidebar-foreground: oklch(0.22 0.03 255);
-  --sidebar-primary: oklch(0.34 0.09 255);
-  --sidebar-primary-foreground: oklch(0.985 0.005 250);
-  --sidebar-accent: oklch(0.93 0.02 250);
-  --sidebar-accent-foreground: oklch(0.3 0.06 255);
-  --sidebar-border: oklch(0.87 0.015 255);
-  --sidebar-ring: oklch(0.55 0.09 255);
+  /* El sidebar de las áreas logueadas es siempre oscuro (estética fija tipo
+     dashboard SaaS, pedido explícito), independiente del tema claro/oscuro
+     del resto de la app — por eso acá usa los mismos valores que en .dark
+     en vez de los propios de :root. */
+  --sidebar: oklch(0.22 0.024 255);
+  --sidebar-foreground: oklch(0.95 0.008 250);
+  --sidebar-primary: oklch(0.72 0.1 255);
+  --sidebar-primary-foreground: oklch(0.18 0.03 255);
+  --sidebar-accent: oklch(0.3 0.025 255);
+  --sidebar-accent-foreground: oklch(0.95 0.008 250);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.65 0.1 255);
 }
 
 .dark {

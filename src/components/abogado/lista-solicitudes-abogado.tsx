@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Download, Eye } from "lucide-react";
+import { Download, Eye, Mail, MapPin, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ESTILO_ESTADO_SOLICITUD, ESTILO_PRIORIDAD_SOLICITUD, iniciales } from "@/lib/estilos-estado";
 import type { EstadoSolicitud, Prioridad } from "@/types/database";
 import { obtenerUrlFirmadaPropia } from "@/app/abogado/solicitudes/actions";
 import { toast } from "sonner";
@@ -51,15 +53,28 @@ export function ListaSolicitudesAbogado({ solicitudes }: { solicitudes: Solicitu
       {solicitudes.map((s) => (
         <Card key={s.id}>
           <CardHeader className="flex-row items-start justify-between gap-2 space-y-0">
-            <div>
-              <CardTitle>{s.cliente_nombre}</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                {s.cliente_email} · {s.cliente_telefono} · {s.cliente_provincia}
-              </p>
+            <div className="flex items-start gap-3">
+              <Avatar className="mt-0.5 shrink-0">
+                <AvatarFallback>{iniciales(s.cliente_nombre)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle>{s.cliente_nombre}</CardTitle>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Mail className="size-3" /> {s.cliente_email}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Phone className="size-3" /> {s.cliente_telefono}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="size-3" /> {s.cliente_provincia}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <Badge variant="outline">{s.estado.replace("_", " ")}</Badge>
-              <Badge variant="outline">{s.prioridad}</Badge>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <Badge className={ESTILO_ESTADO_SOLICITUD[s.estado]}>{s.estado.replace("_", " ")}</Badge>
+              <Badge className={ESTILO_PRIORIDAD_SOLICITUD[s.prioridad]}>{s.prioridad}</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">

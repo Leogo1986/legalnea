@@ -1,14 +1,22 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { requireRole } from "@/lib/auth/require-role";
-import { ClienteNav } from "@/components/cliente/cliente-nav";
+import { AppShell } from "@/components/layout/app-shell";
+import { CLIENTE_LINKS } from "@/components/layout/nav-links";
 
 export default async function ClienteLayout({ children }: { children: ReactNode }) {
   const { perfil } = await requireRole("cliente");
+  const collapsed = (await cookies()).get("sidebar_collapsed")?.value === "1";
 
   return (
-    <div className="flex min-h-full flex-col">
-      <ClienteNav nombre={perfil.nombre_completo} />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">{children}</main>
-    </div>
+    <AppShell
+      rol="cliente"
+      rolLabel="Cliente"
+      nombre={perfil.nombre_completo}
+      links={CLIENTE_LINKS}
+      defaultCollapsed={collapsed}
+    >
+      {children}
+    </AppShell>
   );
 }

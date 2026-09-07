@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ClipboardList, Clock, Scale, UserCheck } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardCharts } from "@/components/admin/dashboard-charts";
 
@@ -66,34 +65,30 @@ export default async function AdminDashboardPage() {
       valor: kpis.abogadosPendientes,
       icon: Clock,
       href: "/admin/abogados?estado=pendiente",
-      borde: "border-l-amber-500",
-      icono: "bg-amber-500/15 text-amber-600",
+      color: "amber",
     },
     {
       titulo: "Abogados aprobados",
       valor: kpis.abogadosAprobados,
       icon: UserCheck,
       href: "/admin/abogados?estado=aprobado",
-      borde: "border-l-emerald-500",
-      icono: "bg-emerald-500/15 text-emerald-600",
+      color: "emerald",
     },
     {
       titulo: "Solicitudes nuevas",
       valor: kpis.solicitudesNuevas,
       icon: ClipboardList,
       href: "/admin/solicitudes?estado=nueva",
-      borde: "border-l-blue-500",
-      icono: "bg-blue-500/15 text-blue-600",
+      color: "blue",
     },
     {
       titulo: "Solicitudes en curso",
       valor: kpis.solicitudesEnCurso,
       icon: Scale,
       href: "/admin/solicitudes?estado=en_curso",
-      borde: "border-l-primary",
-      icono: "bg-primary/15 text-primary",
+      color: "primary",
     },
-  ];
+  ] as const;
 
   return (
     <div className="grid gap-6">
@@ -104,21 +99,7 @@ export default async function AdminDashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tarjetas.map((t) => (
-          <Link key={t.titulo} href={t.href} className="block">
-            <Card className={`border-l-4 transition-shadow hover:shadow-md ${t.borde}`}>
-              <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {t.titulo}
-                </CardTitle>
-                <span className={`flex size-8 items-center justify-center rounded-full ${t.icono}`}>
-                  <t.icon className="size-4" />
-                </span>
-              </CardHeader>
-              <CardContent>
-                <p className="font-heading text-2xl font-semibold">{t.valor}</p>
-              </CardContent>
-            </Card>
-          </Link>
+          <StatCard key={t.titulo} title={t.titulo} value={t.valor} icon={t.icon} color={t.color} href={t.href} />
         ))}
       </div>
 

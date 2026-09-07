@@ -1,14 +1,22 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { requireRole } from "@/lib/auth/require-role";
-import { AbogadoNav } from "@/components/abogado/abogado-nav";
+import { AppShell } from "@/components/layout/app-shell";
+import { ABOGADO_LINKS } from "@/components/layout/nav-links";
 
 export default async function AbogadoLayout({ children }: { children: ReactNode }) {
   const { perfil } = await requireRole("abogado");
+  const collapsed = (await cookies()).get("sidebar_collapsed")?.value === "1";
 
   return (
-    <div className="flex min-h-full flex-col">
-      <AbogadoNav nombre={perfil.nombre_completo} />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">{children}</main>
-    </div>
+    <AppShell
+      rol="abogado"
+      rolLabel="Abogado"
+      nombre={perfil.nombre_completo}
+      links={ABOGADO_LINKS}
+      defaultCollapsed={collapsed}
+    >
+      {children}
+    </AppShell>
   );
 }
