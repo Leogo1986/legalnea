@@ -35,7 +35,7 @@ import { createClient } from "@/lib/supabase/client";
 import { SITE_NAME } from "@/lib/constants";
 import { marcarNotificacionesLeidas } from "@/app/admin/actions";
 import { iniciales } from "@/lib/estilos-estado";
-import type { NavLink } from "@/components/layout/nav-links";
+import { ABOGADO_LINKS, ADMIN_LINKS, CLIENTE_LINKS, type NavLink } from "@/components/layout/nav-links";
 import type { NotificacionAdmin } from "@/types/database";
 
 type Rol = "admin" | "abogado" | "cliente";
@@ -108,11 +108,22 @@ function formatearFechaNotificacion(fecha: string) {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(new Date(fecha));
 }
 
+// Los links (con sus íconos de lucide-react) se resuelven acá adentro, en
+// componente cliente, a partir del `rol` — no como prop desde el layout
+// (Server Component): un ícono es una referencia a función/componente, y
+// pasar eso como prop server→cliente rompe la serialización del RSC payload
+// (funciona en `npm run build` porque las rutas son dinámicas y no se
+// prerrenderizan, pero explota en producción en cada request real).
+const LINKS_POR_ROL: Record<Rol, NavLink[]> = {
+  admin: ADMIN_LINKS,
+  abogado: ABOGADO_LINKS,
+  cliente: CLIENTE_LINKS,
+};
+
 export function AppShell({
   rol,
   rolLabel,
   nombre,
-  links,
   defaultCollapsed,
   notificaciones,
   children,
@@ -120,11 +131,11 @@ export function AppShell({
   rol: Rol;
   rolLabel: string;
   nombre: string;
-  links: NavLink[];
   defaultCollapsed: boolean;
   notificaciones?: NotificacionAdmin[];
   children: React.ReactNode;
 }) {
+  const links = LINKS_POR_ROL[rol];
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
