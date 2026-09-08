@@ -184,25 +184,41 @@ export async function asignarAbogado(
 }
 
 // Genera y setea una clave nueva directo por Auth admin (sin mail/Resend de
-// por medio) para un cliente que YA tiene cuenta — para mandarla por
-// WhatsApp igual que al aprobar. Requiere que el cliente tenga perfil (si
-// nunca fue aprobado, no hay cuenta que resetear).
-export async function generarClaveClienteExistente(email: string): Promise<ResultadoConClave> {
+// por medio), para mandarla por WhatsApp. A diferencia de la versión vieja
+// (generarClaveClienteExistente, por email), esta recibe el cliente_id y
+// CREA la cuenta si todavía no existe — cubre el caso real de una solicitud
+// que salió de "nueva" sin pasar por el botón Aprobar (ej. se le asignó
+// abogado directo desde el combobox), donde ya no queda ningún botón para
+// aprobar al cliente y la clave vieja tiraba "todavía no tiene cuenta" sin
+// forma de resolverlo desde la UI.
+export async function generarClaveCliente(clienteId: string): Promise<ResultadoConClave> {
   await requireRole("admin");
   const admin = createAdminClient();
 
-  const { data: perfil } = await admin
-    .from("perfiles")
-    .select("id, nombre_completo")
-    .eq("email", email)
-    .maybeSingle();
+  const { data: cliente, error: errorGet } = await admin
+    .from("clientes")
+    .select("id, user_id, email, nombre_completo")
+    .eq("id", clienteId)
+    .single();
 
-  if (!perfil) {
-    return { success: false, error: "Ese cliente todavía no tiene cuenta (aprobá su solicitud primero)." };
+  if (errorGet || !cliente) return { success: false, error: "Cliente no encontrado." };
+
+  let userId = cliente.user_id;
+  if (!userId) {
+    const res = await vincularCuentaCliente(admin, cliente.id, cliente.email, cliente.nombre_completo);
+    if (res.error) return { success: false, error: res.error };
+    if (res.password) return { success: true, password: res.password };
+
+    // vincularCuentaCliente no devolvió clave: encontró un perfil de cliente
+    // ya existente con ese email (ej. otra solicitud anterior) y solo
+    // vinculó — releer el user_id recién asignado para generarle clave abajo.
+    const { data: clienteVinculado } = await admin.from("clientes").select("user_id").eq("id", clienteId).single();
+    userId = clienteVinculado?.user_id ?? null;
+    if (!userId) return { success: false, error: "No pudimos crear la cuenta del cliente." };
   }
 
-  const password = await generarPasswordApartirDeNombre(admin, perfil.nombre_completo, perfil.id);
-  const { error } = await admin.auth.admin.updateUserById(perfil.id, { password });
+  const password = await generarPasswordApartirDeNombre(admin, cliente.nombre_completo, userId, "cliente");
+  const { error } = await admin.auth.admin.updateUserById(userId, { password });
 
   if (error) return { success: false, error: "No pudimos generar la clave." };
   return { success: true, password };

@@ -32,7 +32,7 @@ export default async function AdminSolicitudesPage({
   let query = supabase
     .from("solicitudes")
     .select(
-      "id, motivo_consulta, estado, prioridad, created_at, abogado_asignado_id, clientes(nombre_completo, email, telefono, provincia), abogados(nombre_completo), solicitud_adjuntos(id, nombre_archivo, ruta_storage), mensajes(id, contenido, autor_rol, created_at)"
+      "id, motivo_consulta, estado, prioridad, created_at, abogado_asignado_id, clientes(id, nombre_completo, email, telefono, provincia), abogados(nombre_completo), solicitud_adjuntos(id, nombre_archivo, ruta_storage), mensajes(id, contenido, autor_rol, created_at)"
     )
     .order("created_at", { ascending: false });
 
@@ -60,6 +60,7 @@ export default async function AdminSolicitudesPage({
 
   const solicitudes: SolicitudAdmin[] = (data ?? []).map((s) => {
     const cliente = s.clientes as unknown as {
+      id: string;
       nombre_completo: string;
       email: string;
       telefono: string;
@@ -76,6 +77,7 @@ export default async function AdminSolicitudesPage({
       created_at: s.created_at,
       abogado_asignado_id: s.abogado_asignado_id,
       abogado_asignado_nombre: abogado?.nombre_completo ?? null,
+      cliente_id: cliente?.id ?? "",
       cliente_nombre: cliente?.nombre_completo ?? "—",
       cliente_email: cliente?.email ?? "—",
       cliente_telefono: cliente?.telefono ?? "—",

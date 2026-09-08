@@ -53,7 +53,7 @@ import {
   cambiarEstadoSolicitud,
   cambiarPrioridadSolicitud,
   enviarMensajeAdmin,
-  generarClaveClienteExistente,
+  generarClaveCliente,
   obtenerUrlFirmadaAdjunto,
   rechazarSolicitud,
 } from "@/app/admin/solicitudes/actions";
@@ -66,6 +66,7 @@ export type SolicitudAdmin = {
   created_at: string;
   abogado_asignado_id: string | null;
   abogado_asignado_nombre: string | null;
+  cliente_id: string;
   cliente_nombre: string;
   cliente_email: string;
   cliente_telefono: string;
@@ -204,21 +205,23 @@ export function TablaSolicitudes({
   }
 
   // Genera una clave nueva y abre el diálogo para copiarla/mandarla — se usa
-  // tanto desde el botón de WhatsApp de la fila (cliente ya aprobado antes)
-  // como desde "Generar nueva clave" en el detalle.
+  // tanto desde el botón de WhatsApp de la fila como desde "Generar nueva
+  // clave" en el detalle. Crea la cuenta del cliente si todavía no la tenía
+  // (ej. una solicitud a la que se le asignó abogado directo, sin pasar por
+  // el botón Aprobar — quedaba sin ninguna forma de generar la cuenta).
   async function generarYMostrarClave(
     idBusy: string,
-    datos: { nombre: string; email: string; telefono: string }
+    datos: { clienteId: string; nombre: string; email: string; telefono: string }
   ) {
     setEnAccion(idBusy);
-    const res = await generarClaveClienteExistente(datos.email);
+    const res = await generarClaveCliente(datos.clienteId);
     setEnAccion(null);
     if (!res.success) {
       toast.error(res.error ?? "Ocurrió un error.");
       return;
     }
     if (res.password) {
-      setClaveGenerada({ ...datos, password: res.password });
+      setClaveGenerada({ nombre: datos.nombre, email: datos.email, telefono: datos.telefono, password: res.password });
     }
   }
 
@@ -330,6 +333,7 @@ export function TablaSolicitudes({
                             title="Generar clave y avisar por WhatsApp"
                             onClick={() =>
                               generarYMostrarClave(s.id, {
+                                clienteId: s.cliente_id,
                                 nombre: s.cliente_nombre,
                                 email: s.cliente_email,
                                 telefono: s.cliente_telefono,
@@ -446,6 +450,7 @@ export function TablaSolicitudes({
                   onClick={async () => {
                     setReseteandoPassword(true);
                     await generarYMostrarClave(`detalle-${detalle.id}`, {
+                      clienteId: detalle.cliente_id,
                       nombre: detalle.cliente_nombre,
                       email: detalle.cliente_email,
                       telefono: detalle.cliente_telefono,
