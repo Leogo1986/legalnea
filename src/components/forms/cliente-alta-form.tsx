@@ -46,6 +46,7 @@ export function ClienteAltaForm() {
     handleSubmit,
     control,
     setValue,
+    trigger,
     watch,
     formState: { errors },
   } = useForm<ClienteAltaInput>({
@@ -56,6 +57,14 @@ export function ClienteAltaForm() {
   const [archivos, setArchivos] = React.useState<File[]>([]);
   const [enviando, setEnviando] = React.useState(false);
   const [enviado, setEnviado] = React.useState(false);
+
+  // Al enviar con éxito: volver arriba de la página — si el usuario estaba
+  // más abajo llenando el formulario, se quedaba ahí sin ver el mensaje de
+  // confirmación (mismo ajuste pedido para el alta de abogado).
+  React.useEffect(() => {
+    if (!enviado) return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [enviado]);
 
   async function onSubmit(datos: ClienteAltaInput) {
     setEnviando(true);
@@ -201,7 +210,15 @@ export function ClienteAltaForm() {
                     id="localidad"
                     provincia={watch("provincia")}
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(v) => {
+                      field.onChange(v);
+                      // Forzado explícito: sin esto, el error "Ingresá tu
+                      // localidad" (disparado antes por el setValue con
+                      // shouldValidate al cambiar de provincia) quedaba
+                      // pegado en pantalla aunque ya se eligiera una
+                      // localidad válida — reportado por el usuario.
+                      trigger("localidad");
+                    }}
                   />
                 )}
               />

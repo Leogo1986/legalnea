@@ -62,6 +62,7 @@ export function AbogadoAltaForm({ especialidades }: { especialidades: Especialid
     handleSubmit,
     control,
     setValue,
+    trigger,
     watch,
     formState: { errors, isSubmitting: validando },
   } = useForm<AbogadoAltaInput>({
@@ -99,11 +100,14 @@ export function AbogadoAltaForm({ especialidades }: { especialidades: Especialid
     setResultado(res.abogado);
   }
 
-  // 1.5s después del envío exitoso: scroll suave al listado + destacar la
-  // tarjeta recién agregada (vía portal, ya que el abogado queda "pendiente"
-  // y el listado en vivo solo muestra aprobados).
+  // Al enviar con éxito: volver arriba de la página (si el usuario estaba
+  // más abajo llenando el formulario, se queda ahí y no ve el mensaje de
+  // bienvenida — reportado por el usuario). 1.5s después: scroll suave al
+  // listado + destacar la tarjeta recién agregada (vía portal, ya que el
+  // abogado queda "pendiente" y el listado en vivo solo muestra aprobados).
   React.useEffect(() => {
     if (!resultado) return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
     const timeout = setTimeout(() => {
       document
         .getElementById("listado-abogados")
@@ -233,7 +237,15 @@ export function AbogadoAltaForm({ especialidades }: { especialidades: Especialid
                       id="localidad"
                       provincia={watch("provincia")}
                       value={field.value}
-                      onChange={field.onChange}
+                      onChange={(v) => {
+                        field.onChange(v);
+                        // Forzado explícito: sin esto, el error "Ingresá tu
+                        // localidad" (disparado antes por el setValue con
+                        // shouldValidate al cambiar de provincia) quedaba
+                        // pegado en pantalla aunque ya se eligiera una
+                        // localidad válida — reportado por el usuario.
+                        trigger("localidad");
+                      }}
                     />
                   )}
                 />
