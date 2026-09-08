@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -214,7 +215,9 @@ export function AppShell({
                   )}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
-                  <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   {notifs.length === 0 ? (
                     <p className="px-2 py-4 text-center text-sm text-muted-foreground">Sin notificaciones.</p>
@@ -248,7 +251,9 @@ export function AppShell({
                 <span className="hidden text-sm font-medium sm:inline">{nombre}</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{rolLabel}</DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>{rolLabel}</DropdownMenuLabel>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem render={<Link href={`/${rol}/perfil`} />}>
                   <UserRound />
