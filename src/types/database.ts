@@ -22,6 +22,7 @@ export type Perfil = {
   nombre_completo: string;
   email: string;
   telefono: string | null;
+  avatar_url: string | null;
   activo: boolean;
   created_at: string;
   updated_at: string;

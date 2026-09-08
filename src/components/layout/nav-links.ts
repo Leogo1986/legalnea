@@ -10,6 +10,7 @@ export const ADMIN_LINKS: NavLink[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/abogados", label: "Abogados", icon: Scale },
   { href: "/admin/solicitudes", label: "Solicitudes", icon: ScrollText },
+  { href: "/admin/perfil", label: "Mi perfil", icon: UserRound },
 ];
 
 export const ABOGADO_LINKS: NavLink[] = [

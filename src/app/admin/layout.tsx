@@ -14,6 +14,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       rol="admin"
       rolLabel="Admin"
       nombre={perfil.nombre_completo}
+      avatarUrl={perfil.avatar_url}
       defaultCollapsed={collapsed}
       notificaciones={notificaciones}
     >

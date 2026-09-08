@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { PerfilAbogadoForm } from "@/components/abogado/perfil-abogado-form";
-import { CambiarPasswordAbogadoForm } from "@/components/abogado/cambiar-password-abogado-form";
+import { CambiarPasswordForm } from "@/components/shared/cambiar-password-form";
+import { AvatarUpload } from "@/components/shared/avatar-upload";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Mi perfil — Abogado" };
@@ -22,7 +23,7 @@ const BORDE_ESTADO: Record<string, string> = {
 };
 
 export default async function PerfilAbogadoPage() {
-  const { user } = await requireRole("abogado");
+  const { user, perfil } = await requireRole("abogado");
   const supabase = await createClient();
 
   const { data: abogado } = await supabase
@@ -44,6 +45,12 @@ export default async function PerfilAbogadoPage() {
         <p className="text-sm text-muted-foreground">Tus datos y el estado de tu cuenta.</p>
       </div>
 
+      <Card>
+        <CardContent className="py-4">
+          <AvatarUpload userId={user.id} nombreCompleto={abogado.nombre_completo} avatarUrlInicial={perfil.avatar_url} />
+        </CardContent>
+      </Card>
+
       <Card className={`border-l-4 ${BORDE_ESTADO[abogado.estado]}`}>
         <CardContent className="py-4 text-sm">
           <p className="font-medium">Estado: {abogado.estado}</p>
@@ -55,7 +62,7 @@ export default async function PerfilAbogadoPage() {
       </Card>
 
       <PerfilAbogadoForm abogado={abogado} />
-      <CambiarPasswordAbogadoForm />
+      <CambiarPasswordForm />
     </div>
   );
 }

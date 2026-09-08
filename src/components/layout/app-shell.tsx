@@ -8,7 +8,7 @@ import { Bell, LogOut, Menu, Scale, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,7 +57,15 @@ function ShellSidebarHeader({ rolLabel }: { rolLabel: string }) {
   );
 }
 
-function ShellSidebarFooter({ nombre, onSalir }: { nombre: string; onSalir: () => void }) {
+function ShellSidebarFooter({
+  nombre,
+  avatarUrl,
+  onSalir,
+}: {
+  nombre: string;
+  avatarUrl?: string | null;
+  onSalir: () => void;
+}) {
   const collapsed = useSidebarCollapsed();
 
   if (collapsed) {
@@ -86,6 +94,7 @@ function ShellSidebarFooter({ nombre, onSalir }: { nombre: string; onSalir: () =
     <SidebarFooter>
       <div className="flex items-center gap-2">
         <Avatar size="sm">
+          <AvatarImage src={avatarUrl ?? undefined} alt={nombre} />
           <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
             {iniciales(nombre)}
           </AvatarFallback>
@@ -124,6 +133,7 @@ export function AppShell({
   rol,
   rolLabel,
   nombre,
+  avatarUrl,
   defaultCollapsed,
   notificaciones,
   children,
@@ -131,6 +141,7 @@ export function AppShell({
   rol: Rol;
   rolLabel: string;
   nombre: string;
+  avatarUrl?: string | null;
   defaultCollapsed: boolean;
   notificaciones?: NotificacionAdmin[];
   children: React.ReactNode;
@@ -173,7 +184,7 @@ export function AppShell({
             ))}
           </SidebarMenu>
         </SidebarContent>
-        <ShellSidebarFooter nombre={nombre} onSalir={salir} />
+        <ShellSidebarFooter nombre={nombre} avatarUrl={avatarUrl} onSalir={salir} />
       </Sidebar>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -231,6 +242,7 @@ export function AppShell({
             <DropdownMenu>
               <DropdownMenuTrigger render={<Button variant="ghost" className="gap-2 px-1.5" />}>
                 <Avatar size="sm">
+                  <AvatarImage src={avatarUrl ?? undefined} alt={nombre} />
                   <AvatarFallback>{iniciales(nombre)}</AvatarFallback>
                 </Avatar>
                 <span className="hidden text-sm font-medium sm:inline">{nombre}</span>
@@ -238,12 +250,10 @@ export function AppShell({
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{rolLabel}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {rol !== "admin" && (
-                  <DropdownMenuItem render={<Link href={`/${rol}/perfil`} />}>
-                    <UserRound />
-                    Mi perfil
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem render={<Link href={`/${rol}/perfil`} />}>
+                  <UserRound />
+                  Mi perfil
+                </DropdownMenuItem>
                 <DropdownMenuItem variant="destructive" onClick={salir}>
                   <LogOut />
                   Salir
@@ -286,6 +296,7 @@ export function AppShell({
           </nav>
           <div className="flex items-center gap-2 border-t border-sidebar-border pt-3">
             <Avatar size="sm">
+              <AvatarImage src={avatarUrl ?? undefined} alt={nombre} />
               <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
                 {iniciales(nombre)}
               </AvatarFallback>

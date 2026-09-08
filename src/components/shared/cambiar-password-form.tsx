@@ -12,10 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { nuevaPasswordSchema, type NuevaPasswordInput } from "@/lib/validation/auth.schema";
 
-// Cambio de contraseña 100% client-side (`supabase.auth.updateUser`), no
-// server action: requiere la sesión activa del propio usuario, igual que
-// `set-password-form.tsx` (self-service, no hay admin client de por medio).
-export function CambiarPasswordAbogadoForm() {
+// Compartido entre admin/abogado/cliente — antes vivía triplicado
+// (cambiar-password-cliente-form.tsx / cambiar-password-abogado-form.tsx,
+// idénticos salvo el nombre). 100% client-side (supabase.auth.updateUser),
+// sin server action: requiere la sesión activa del propio usuario.
+export function CambiarPasswordForm() {
   const {
     register,
     handleSubmit,
@@ -44,7 +45,7 @@ export function CambiarPasswordAbogadoForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Cambiar contraseña</CardTitle>
+        <CardTitle className="text-lg">Cambiar contraseña</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4" noValidate>

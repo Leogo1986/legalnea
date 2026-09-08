@@ -8,7 +8,13 @@ export default async function ClienteLayout({ children }: { children: ReactNode 
   const collapsed = (await cookies()).get("sidebar_collapsed")?.value === "1";
 
   return (
-    <AppShell rol="cliente" rolLabel="Cliente" nombre={perfil.nombre_completo} defaultCollapsed={collapsed}>
+    <AppShell
+      rol="cliente"
+      rolLabel="Cliente"
+      nombre={perfil.nombre_completo}
+      avatarUrl={perfil.avatar_url}
+      defaultCollapsed={collapsed}
+    >
       {children}
     </AppShell>
   );

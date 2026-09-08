@@ -55,6 +55,7 @@ export async function crearAbogado(
       codigo_postal: datos.codigo_postal || null,
       matricula_federal: datos.matricula_federal || null,
       matricula_provincial: datos.matricula_provincial || null,
+      anios_experiencia: datos.anios_experiencia ? parseInt(datos.anios_experiencia, 10) : null,
       email: datos.email,
       estado: "pendiente",
       user_id: null,

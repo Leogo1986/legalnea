@@ -46,6 +46,15 @@ export const abogadoDatosSchema = z.object({
   codigo_postal: z.string().trim().max(15).optional().or(z.literal("")),
   matricula_federal: z.string().trim().max(100).optional().or(z.literal("")),
   matricula_provincial: z.string().trim().max(100).optional().or(z.literal("")),
+  // Mismo criterio que codigo_postal/matricula_*: texto opcional, no number
+  // (evita que un string vacío del input se transforme en 0 en vez de "sin
+  // valor") — se convierte a entero recién al insertar en la base.
+  anios_experiencia: z
+    .string()
+    .trim()
+    .regex(/^\d{0,2}$/, "Ingresá un número de hasta 2 dígitos")
+    .optional()
+    .or(z.literal("")),
   email: emailSchema,
   especialidad_ids: z
     .array(z.string().uuid())

@@ -16,7 +16,7 @@ export async function requireRole(rolRequerido: Rol) {
 
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("id, rol, nombre_completo, email")
+    .select("id, rol, nombre_completo, email, telefono, avatar_url")
     .eq("id", user.id)
     .single();
 

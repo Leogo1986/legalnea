@@ -52,6 +52,7 @@ const valoresPorDefecto: AbogadoAltaInput = {
   codigo_postal: "",
   matricula_federal: "",
   matricula_provincial: "",
+  anios_experiencia: "",
   email: "",
   especialidad_ids: [],
 };
@@ -287,6 +288,21 @@ export function AbogadoAltaForm({ especialidades }: { especialidades: Especialid
             {errors.matricula_federal && (
               <p className="-mt-3 text-sm text-destructive">{errors.matricula_federal.message}</p>
             )}
+
+            <div className="grid gap-1.5 sm:w-1/2 sm:pr-2">
+              <Label htmlFor="anios_experiencia">Años de experiencia (opcional)</Label>
+              <Input
+                id="anios_experiencia"
+                type="number"
+                min={0}
+                max={70}
+                aria-invalid={!!errors.anios_experiencia}
+                {...register("anios_experiencia")}
+              />
+              {errors.anios_experiencia && (
+                <p className="text-sm text-destructive">{errors.anios_experiencia.message}</p>
+              )}
+            </div>
 
             <div className="grid gap-2">
               <Label>Área de actuación</Label>
