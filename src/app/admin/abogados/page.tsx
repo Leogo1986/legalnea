@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { TablaAbogados, type AbogadoAdmin } from "@/components/admin/tabla-abogados";
+import { getSiteUrl } from "@/lib/site-url";
 import type { EstadoAbogado } from "@/types/database";
 
 export const metadata: Metadata = { title: "Abogados — Admin" };
@@ -69,7 +70,7 @@ export default async function AdminAbogadosPage({
           Gestioná las solicitudes de alta de la red PROBONO.
         </p>
       </div>
-      <TablaAbogados abogados={abogados} estadoFiltro={estadoFiltro} />
+      <TablaAbogados abogados={abogados} estadoFiltro={estadoFiltro} siteUrl={getSiteUrl()} />
     </div>
   );
 }

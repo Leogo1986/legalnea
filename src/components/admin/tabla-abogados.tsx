@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, Download, Eye, KeyRound, Loader2, Search, UserX, X } from "lucide-react";
+import { Check, Copy, Download, Eye, Loader2, MessageCircle, Search, UserX, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,13 +28,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { iniciales } from "@/lib/estilos-estado";
+import { armarLinkWhatsapp, mensajeAltaAbogadoAprobada } from "@/lib/whatsapp";
 import type { EstadoAbogado } from "@/types/database";
 import {
   aprobarAbogado,
+  generarClaveAbogadoExistente,
   obtenerUrlFirmadaDj,
   rechazarAbogado,
   reactivarAbogado,
-  resetearPasswordAbogado,
   suspenderAbogado,
 } from "@/app/admin/abogados/actions";
 
@@ -90,7 +91,7 @@ function AccionesAbogado({
   expandido = false,
   onAprobar,
   onRechazar,
-  onResetPassword,
+  onGenerarClave,
   onSuspender,
   onReactivar,
 }: {
@@ -99,7 +100,7 @@ function AccionesAbogado({
   expandido?: boolean;
   onAprobar: (a: AbogadoAdmin) => void;
   onRechazar: (a: AbogadoAdmin) => void;
-  onResetPassword: (a: AbogadoAdmin) => void;
+  onGenerarClave: (a: AbogadoAdmin) => void;
   onSuspender: (a: AbogadoAdmin) => void;
   onReactivar: (a: AbogadoAdmin) => void;
 }) {
@@ -126,9 +127,9 @@ function AccionesAbogado({
   if (a.estado === "aprobado") {
     return (
       <>
-        <Button size={size} variant={variant} title="Restablecer contraseña" onClick={() => onResetPassword(a)}>
-          <KeyRound className="size-4" />
-          {expandido && "Restablecer contraseña"}
+        <Button size={size} variant={variant} title="Generar clave y avisar por WhatsApp" onClick={() => onGenerarClave(a)}>
+          <MessageCircle className="size-4 text-emerald-600" />
+          {expandido && "Generar clave y avisar por WhatsApp"}
         </Button>
         <Button size={size} variant={variant} title="Suspender" onClick={() => onSuspender(a)}>
           <UserX className="size-4 text-amber-600" />
@@ -153,9 +154,11 @@ function AccionesAbogado({
 export function TablaAbogados({
   abogados,
   estadoFiltro,
+  siteUrl,
 }: {
   abogados: AbogadoAdmin[];
   estadoFiltro: EstadoAbogado | null;
+  siteUrl: string;
 }) {
   const router = useRouter();
   const [busqueda, setBusqueda] = React.useState("");
@@ -167,6 +170,15 @@ export function TablaAbogados({
   // router.refresh() (aprobar/rechazar desde el propio diálogo).
   const [detalleId, setDetalleId] = React.useState<string | null>(null);
   const detalle = detalleId ? (abogados.find((a) => a.id === detalleId) ?? null) : null;
+  // Clave recién generada (al aprobar o a mano) — se muestra una sola vez
+  // para copiarla o mandarla por WhatsApp, mismo mecanismo que en
+  // tabla-solicitudes.tsx.
+  const [claveGenerada, setClaveGenerada] = React.useState<{
+    nombre: string;
+    email: string;
+    telefono: string;
+    password: string;
+  } | null>(null);
 
   const filtrados = abogados.filter((a) => {
     const q = busqueda.trim().toLowerCase();
@@ -188,6 +200,37 @@ export function TablaAbogados({
     }
     toast.success("Listo.");
     router.refresh();
+  }
+
+  async function aprobar(a: AbogadoAdmin) {
+    setEnAccion(a.id);
+    const res = await aprobarAbogado(a.id);
+    setEnAccion(null);
+    if (!res.success) {
+      toast.error(res.error ?? "Ocurrió un error.");
+      return;
+    }
+    toast.success("Abogado aprobado.");
+    if (res.password) {
+      setClaveGenerada({ nombre: a.nombre_completo, email: a.email, telefono: a.telefono, password: res.password });
+    }
+    router.refresh();
+  }
+
+  // Genera una clave nueva y abre el diálogo para copiarla/mandarla — se usa
+  // desde el botón de WhatsApp de la fila/detalle para un abogado que ya
+  // estaba aprobado antes (ej. perdió la clave).
+  async function generarYMostrarClave(idBusy: string, a: AbogadoAdmin) {
+    setEnAccion(idBusy);
+    const res = await generarClaveAbogadoExistente(a.email);
+    setEnAccion(null);
+    if (!res.success) {
+      toast.error(res.error ?? "Ocurrió un error.");
+      return;
+    }
+    if (res.password) {
+      setClaveGenerada({ nombre: a.nombre_completo, email: a.email, telefono: a.telefono, password: res.password });
+    }
   }
 
   async function descargarDj(ruta: string) {
@@ -306,9 +349,9 @@ export function TablaAbogados({
                       <AccionesAbogado
                         a={a}
                         ocupado={cargando}
-                        onAprobar={(a) => ejecutar(a.id, () => aprobarAbogado(a.id))}
+                        onAprobar={aprobar}
                         onRechazar={alRechazar}
-                        onResetPassword={(a) => ejecutar(a.id, () => resetearPasswordAbogado(a.email))}
+                        onGenerarClave={(a) => generarYMostrarClave(a.id, a)}
                         onSuspender={(a) => ejecutar(a.id, () => suspenderAbogado(a.id))}
                         onReactivar={(a) => ejecutar(a.id, () => reactivarAbogado(a.id))}
                       />
@@ -451,9 +494,9 @@ export function TablaAbogados({
                     a={detalle}
                     ocupado={enAccion === detalle.id}
                     expandido
-                    onAprobar={(a) => ejecutar(a.id, () => aprobarAbogado(a.id))}
+                    onAprobar={aprobar}
                     onRechazar={alRechazar}
-                    onResetPassword={(a) => ejecutar(a.id, () => resetearPasswordAbogado(a.email))}
+                    onGenerarClave={(a) => generarYMostrarClave(`detalle-${a.id}`, a)}
                     onSuspender={(a) => ejecutar(a.id, () => suspenderAbogado(a.id))}
                     onReactivar={(a) => ejecutar(a.id, () => reactivarAbogado(a.id))}
                   />
@@ -461,6 +504,53 @@ export function TablaAbogados({
               )}
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!claveGenerada} onOpenChange={(open) => !open && setClaveGenerada(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clave para {claveGenerada?.nombre}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 text-sm">
+            <p className="text-muted-foreground">
+              Se muestra una sola vez acá — copiala o mandala por WhatsApp ahora. No queda
+              guardada en ningún lado en texto plano.
+            </p>
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
+              <span className="flex-1 truncate font-mono text-base">{claveGenerada?.password}</span>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                title="Copiar clave"
+                onClick={() => {
+                  if (!claveGenerada) return;
+                  navigator.clipboard.writeText(claveGenerada.password);
+                  toast.success("Clave copiada.");
+                }}
+              >
+                <Copy className="size-4" />
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                if (!claveGenerada) return;
+                const mensaje = mensajeAltaAbogadoAprobada(
+                  claveGenerada.nombre,
+                  claveGenerada.email,
+                  claveGenerada.password,
+                  siteUrl
+                );
+                window.open(armarLinkWhatsapp(claveGenerada.telefono, mensaje), "_blank", "noopener,noreferrer");
+                setClaveGenerada(null);
+              }}
+            >
+              <MessageCircle className="size-4" />
+              Enviar por WhatsApp
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

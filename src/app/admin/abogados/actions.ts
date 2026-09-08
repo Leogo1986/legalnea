@@ -3,13 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { enviarAltaAbogadoAprobado, enviarAltaAbogadoRechazado } from "@/lib/email/enviar";
-import { generarYEnviarReseteoPassword } from "@/lib/auth/enviar-reseteo";
-import { getSiteUrl } from "@/lib/site-url";
+import { enviarAltaAbogadoRechazado } from "@/lib/email/enviar";
+import { vincularCuentaAbogado } from "@/lib/auth/vincular-cuenta-abogado";
+import { generarPasswordApartirDeNombre } from "@/lib/auth/generar-password";
 
 type ResultadoAccion = { success: true } | { success: false; error: string };
+type ResultadoConClave =
+  | { success: true; password?: string }
+  | { success: false; error: string };
 
-export async function aprobarAbogado(abogadoId: string): Promise<ResultadoAccion> {
+// Aprueba el alta de un abogado. La cuenta de Auth se crea/vincula recién
+// acá (ver lib/auth/vincular-cuenta-abogado.ts) con una clave determinística
+// que se devuelve para que el admin la mande por WhatsApp — antes se usaba
+// `generateLink({type:"invite"})` + mail de Resend, pero sin Resend
+// configurado el abogado quedaba aprobado sin enterarse ni poder loguear.
+export async function aprobarAbogado(abogadoId: string): Promise<ResultadoConClave> {
   const { user } = await requireRole("admin");
   const admin = createAdminClient();
 
@@ -22,48 +30,18 @@ export async function aprobarAbogado(abogadoId: string): Promise<ResultadoAccion
   if (errorGet || !abogado) return { success: false, error: "Abogado no encontrado." };
   if (abogado.estado === "aprobado") return { success: true };
 
-  let authUserId = abogado.user_id;
-
-  if (!authUserId) {
-    const { data: invitado, error: errorInvite } = await admin.auth.admin.generateLink({
-      type: "invite",
-      email: abogado.email,
-      options: { redirectTo: `${getSiteUrl()}/auth/confirm?next=/activar-cuenta` },
-    });
-
-    if (errorInvite || !invitado?.user) {
-      return { success: false, error: "No pudimos crear la cuenta del abogado." };
-    }
-
-    authUserId = invitado.user.id;
-
-    // generateLink({type:"invite"}) crea la cuenta sin confirmar: el email
-    // recién queda confirmado cuando el usuario clickea el link del mail de
-    // invitación. Si el envío de mail falla o no está configurado (Resend),
-    // la cuenta queda confirmable para siempre y el abogado no puede loguear
-    // ni con la password que le resetee el admin. La aprobación del admin ya
-    // es el gate real acá, así que confirmamos el email nosotros mismos.
-    await admin.auth.admin.updateUserById(authUserId, { email_confirm: true });
-
-    await admin.from("perfiles").upsert({
-      id: authUserId,
-      rol: "abogado",
-      nombre_completo: abogado.nombre_completo,
-      email: abogado.email,
-    });
-
-    await enviarAltaAbogadoAprobado({
-      email: abogado.email,
-      nombreCompleto: abogado.nombre_completo,
-      linkActivacion: invitado.properties.action_link,
-    });
+  let password: string | undefined;
+  if (!abogado.user_id) {
+    // vincularCuentaAbogado ya deja escrito abogados.user_id — el update de
+    // abajo no lo toca para no pisarlo con el valor viejo (null) de `abogado`.
+    const res = await vincularCuentaAbogado(admin, abogado.id, abogado.email, abogado.nombre_completo);
+    password = res.password ?? undefined;
   }
 
   const { error: errorUpdate } = await admin
     .from("abogados")
     .update({
       estado: "aprobado",
-      user_id: authUserId,
       aprobado_por: user.id,
       fecha_aprobacion: new Date().toISOString(),
       motivo_rechazo: null,
@@ -81,7 +59,7 @@ export async function aprobarAbogado(abogadoId: string): Promise<ResultadoAccion
 
   revalidatePath("/admin/abogados");
   revalidatePath("/abogados/nuevo");
-  return { success: true };
+  return { success: true, password };
 }
 
 export async function rechazarAbogado(
@@ -174,11 +152,29 @@ export async function reactivarAbogado(abogadoId: string): Promise<ResultadoAcci
   return { success: true };
 }
 
-export async function resetearPasswordAbogado(email: string): Promise<ResultadoAccion> {
+// Genera y setea una clave nueva directo por Auth admin (sin mail/Resend de
+// por medio) para un abogado que YA tiene cuenta — mismo mecanismo que
+// generarClaveClienteExistente en admin/solicitudes/actions.ts, para mandarla
+// por WhatsApp. Reemplaza al viejo resetearPasswordAbogado (Resend-based).
+export async function generarClaveAbogadoExistente(email: string): Promise<ResultadoConClave> {
   await requireRole("admin");
-  const res = await generarYEnviarReseteoPassword(email);
-  if (!res.ok) return { success: false, error: res.error ?? "No pudimos generar el link de reseteo." };
-  return { success: true };
+  const admin = createAdminClient();
+
+  const { data: perfil } = await admin
+    .from("perfiles")
+    .select("id, nombre_completo")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (!perfil) {
+    return { success: false, error: "Ese abogado todavía no tiene cuenta (aprobá su alta primero)." };
+  }
+
+  const password = await generarPasswordApartirDeNombre(admin, perfil.nombre_completo, perfil.id, "abogado");
+  const { error } = await admin.auth.admin.updateUserById(perfil.id, { password });
+
+  if (error) return { success: false, error: "No pudimos generar la clave." };
+  return { success: true, password };
 }
 
 export async function obtenerUrlFirmadaDj(rutaStorage: string): Promise<{ url: string | null }> {

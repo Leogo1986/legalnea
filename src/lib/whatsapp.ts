@@ -35,3 +35,21 @@ export function mensajeSolicitudAprobada(
     `Te recomendamos cambiarla apenas ingreses. ¡Gracias por confiar en Legal Nea!`
   );
 }
+
+// Mismo criterio que mensajeSolicitudAprobada, para el alta de abogados a la
+// red PROBONO: clave en texto plano + link de login, para esquivar Resend.
+export function mensajeAltaAbogadoAprobada(
+  nombre: string,
+  email: string,
+  password: string,
+  siteUrl: string
+): string {
+  const primerNombre = nombre.trim().split(" ")[0] || nombre;
+  return (
+    `Hola ${primerNombre}, te escribimos del estudio jurídico Legal Nea. ` +
+    `Tu alta como abogado de la red PROBONO fue aprobada. ` +
+    `Para ingresar a tu cuenta, entrá a ${siteUrl}/login con tu email ` +
+    `(${email}) y esta clave: ${password}\n\n` +
+    `Te recomendamos cambiarla apenas ingreses. ¡Gracias por sumarte a Legal Nea!`
+  );
+}
