@@ -43,6 +43,7 @@ export async function aprobarSolicitud(solicitudId: string): Promise<ResultadoCo
   let password: string | undefined;
   if (!cliente.user_id) {
     const res = await vincularCuentaCliente(admin, cliente.id, cliente.email, cliente.nombre_completo);
+    if (res.error) return { success: false, error: res.error };
     password = res.password ?? undefined;
   }
 

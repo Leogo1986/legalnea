@@ -15,20 +15,34 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 // email ya tenía cuenta de una solicitud anterior, no se toca su clave
 // (podría estar en uso) — devuelve `password: null` en ese caso; el admin
 // puede generar una clave nueva a mano con "Generar nueva clave".
+//
+// Si el email ya existe pero con rol distinto de "cliente" (ej. alguien
+// puso el mismo mail para darse de alta como abogado y para pedir ayuda
+// legal), NO se vincula — el email es único en Supabase Auth, así que no se
+// puede crear una cuenta de cliente separada con ese mismo mail. Se corta
+// con un error explícito en vez de linkear la solicitud a la cuenta de
+// abogado (bug real reportado: el WhatsApp terminaba mandando la clave de
+// otra persona/rol).
 export async function vincularCuentaCliente(
   supabase: AdminClient,
   clienteId: string,
   email: string,
   nombreCompleto: string
-): Promise<{ password: string | null }> {
+): Promise<{ password: string | null; error?: string }> {
   try {
     const { data: perfilExistente } = await supabase
       .from("perfiles")
-      .select("id")
+      .select("id, rol")
       .eq("email", email)
       .maybeSingle();
 
     if (perfilExistente) {
+      if (perfilExistente.rol !== "cliente") {
+        return {
+          password: null,
+          error: `Ese email ya está registrado como ${perfilExistente.rol}. No se puede aprobar como cliente con el mismo email — pedile al cliente que use un email distinto.`,
+        };
+      }
       await supabase.from("clientes").update({ user_id: perfilExistente.id }).eq("id", clienteId);
       return { password: null };
     }

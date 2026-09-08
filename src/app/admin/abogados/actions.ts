@@ -35,6 +35,7 @@ export async function aprobarAbogado(abogadoId: string): Promise<ResultadoConCla
     // vincularCuentaAbogado ya deja escrito abogados.user_id — el update de
     // abajo no lo toca para no pisarlo con el valor viejo (null) de `abogado`.
     const res = await vincularCuentaAbogado(admin, abogado.id, abogado.email, abogado.nombre_completo);
+    if (res.error) return { success: false, error: res.error };
     password = res.password ?? undefined;
   }
 
