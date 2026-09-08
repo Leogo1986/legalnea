@@ -21,7 +21,7 @@ export default async function AdminAbogadosPage({
   let query = supabase
     .from("abogados")
     .select(
-      "id, nombre_completo, email, telefono, provincia, localidad, estado, fecha_alta, motivo_rechazo, abogado_especialidades(especialidades(nombre))"
+      "id, nombre_completo, email, telefono, dni, provincia, localidad, calle, altura, piso, dpto, codigo_postal, matricula_federal, matricula_provincial, anios_experiencia, motivacion, declaracion_jurada_pdf_url, estado, fecha_alta, motivo_rechazo, abogado_especialidades(especialidades(nombre))"
     )
     .order("fecha_alta", { ascending: false });
 
@@ -34,8 +34,19 @@ export default async function AdminAbogadosPage({
     nombre_completo: a.nombre_completo,
     email: a.email,
     telefono: a.telefono,
+    dni: a.dni,
     provincia: a.provincia,
     localidad: a.localidad,
+    calle: a.calle,
+    altura: a.altura,
+    piso: a.piso,
+    dpto: a.dpto,
+    codigo_postal: a.codigo_postal,
+    matricula_federal: a.matricula_federal,
+    matricula_provincial: a.matricula_provincial,
+    anios_experiencia: a.anios_experiencia,
+    motivacion: a.motivacion,
+    declaracion_jurada_pdf_url: a.declaracion_jurada_pdf_url,
     estado: a.estado,
     fecha_alta: a.fecha_alta,
     motivo_rechazo: a.motivo_rechazo,

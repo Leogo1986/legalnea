@@ -181,3 +181,15 @@ export async function resetearPasswordAbogado(email: string): Promise<ResultadoA
   return { success: true };
 }
 
+export async function obtenerUrlFirmadaDj(rutaStorage: string): Promise<{ url: string | null }> {
+  await requireRole("admin");
+  const admin = createAdminClient();
+
+  const { data, error } = await admin.storage
+    .from("declaraciones-juradas")
+    .createSignedUrl(rutaStorage, 60 * 5);
+
+  if (error || !data) return { url: null };
+  return { url: data.signedUrl };
+}
+

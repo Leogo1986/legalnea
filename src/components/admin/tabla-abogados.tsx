@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, KeyRound, Loader2, Search, UserX, X } from "lucide-react";
+import { Check, Download, Eye, KeyRound, Loader2, Search, UserX, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -31,6 +31,7 @@ import { iniciales } from "@/lib/estilos-estado";
 import type { EstadoAbogado } from "@/types/database";
 import {
   aprobarAbogado,
+  obtenerUrlFirmadaDj,
   rechazarAbogado,
   reactivarAbogado,
   resetearPasswordAbogado,
@@ -42,13 +43,30 @@ export type AbogadoAdmin = {
   nombre_completo: string;
   email: string;
   telefono: string;
+  dni: string | null;
   provincia: string;
   localidad: string;
+  calle: string | null;
+  altura: string | null;
+  piso: string | null;
+  dpto: string | null;
+  codigo_postal: string | null;
+  matricula_federal: string | null;
+  matricula_provincial: string | null;
+  anios_experiencia: number | null;
+  motivacion: string | null;
+  declaracion_jurada_pdf_url: string | null;
   estado: EstadoAbogado;
   fecha_alta: string;
   motivo_rechazo: string | null;
   especialidades: string[];
 };
+
+function domicilioCompleto(a: AbogadoAdmin) {
+  const partes = [a.calle, a.altura].filter(Boolean).join(" ");
+  const pisoDpto = [a.piso && `piso ${a.piso}`, a.dpto && `dpto ${a.dpto}`].filter(Boolean).join(", ");
+  return [partes, pisoDpto, a.localidad, a.provincia].filter(Boolean).join(", ") || "—";
+}
 
 const ESTILO_ESTADO: Record<EstadoAbogado, string> = {
   pendiente: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
@@ -59,6 +77,77 @@ const ESTILO_ESTADO: Record<EstadoAbogado, string> = {
 
 function formatearFecha(fecha: string) {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short" }).format(new Date(fecha));
+}
+
+// Mismo set de botones en la fila (compacto, solo ícono) y en el diálogo de
+// detalle (expandido, con label) — factorizado como componente propio (no
+// definido dentro del render de TablaAbogados: el linter lo marca como
+// error, "Cannot create components during render", porque perdería estado
+// entre renders si se recreara así).
+function AccionesAbogado({
+  a,
+  ocupado,
+  expandido = false,
+  onAprobar,
+  onRechazar,
+  onResetPassword,
+  onSuspender,
+  onReactivar,
+}: {
+  a: AbogadoAdmin;
+  ocupado: boolean;
+  expandido?: boolean;
+  onAprobar: (a: AbogadoAdmin) => void;
+  onRechazar: (a: AbogadoAdmin) => void;
+  onResetPassword: (a: AbogadoAdmin) => void;
+  onSuspender: (a: AbogadoAdmin) => void;
+  onReactivar: (a: AbogadoAdmin) => void;
+}) {
+  if (ocupado) return <Loader2 className="mx-2 size-4 animate-spin text-muted-foreground" />;
+
+  const size = expandido ? "sm" : "icon-sm";
+  const variant = expandido ? "outline" : "ghost";
+
+  if (a.estado === "pendiente") {
+    return (
+      <>
+        <Button size={size} variant={variant} title="Aprobar" onClick={() => onAprobar(a)}>
+          <Check className="size-4 text-emerald-600" />
+          {expandido && "Aprobar"}
+        </Button>
+        <Button size={size} variant={variant} title="Rechazar" onClick={() => onRechazar(a)}>
+          <X className="size-4 text-destructive" />
+          {expandido && "Rechazar"}
+        </Button>
+      </>
+    );
+  }
+
+  if (a.estado === "aprobado") {
+    return (
+      <>
+        <Button size={size} variant={variant} title="Restablecer contraseña" onClick={() => onResetPassword(a)}>
+          <KeyRound className="size-4" />
+          {expandido && "Restablecer contraseña"}
+        </Button>
+        <Button size={size} variant={variant} title="Suspender" onClick={() => onSuspender(a)}>
+          <UserX className="size-4 text-amber-600" />
+          {expandido && "Suspender"}
+        </Button>
+      </>
+    );
+  }
+
+  if (a.estado === "inactivo") {
+    return (
+      <Button size={size} variant={variant} title="Reactivar" onClick={() => onReactivar(a)}>
+        <Check className="size-4 text-emerald-600" />
+        {expandido && "Reactivar"}
+      </Button>
+    );
+  }
+
+  return null;
 }
 
 export function TablaAbogados({
@@ -73,6 +162,11 @@ export function TablaAbogados({
   const [enAccion, setEnAccion] = React.useState<string | null>(null);
   const [dialogoRechazo, setDialogoRechazo] = React.useState<AbogadoAdmin | null>(null);
   const [motivo, setMotivo] = React.useState("");
+  // Igual que en tabla-solicitudes.tsx: se guarda el id, no una copia — así
+  // el detalle siempre muestra el dato actualizado después de un
+  // router.refresh() (aprobar/rechazar desde el propio diálogo).
+  const [detalleId, setDetalleId] = React.useState<string | null>(null);
+  const detalle = detalleId ? (abogados.find((a) => a.id === detalleId) ?? null) : null;
 
   const filtrados = abogados.filter((a) => {
     const q = busqueda.trim().toLowerCase();
@@ -94,6 +188,21 @@ export function TablaAbogados({
     }
     toast.success("Listo.");
     router.refresh();
+  }
+
+  async function descargarDj(ruta: string) {
+    const { url } = await obtenerUrlFirmadaDj(ruta);
+    if (!url) {
+      toast.error("No pudimos generar el link de descarga.");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function alRechazar(a: AbogadoAdmin) {
+    setMotivo("");
+    setDialogoRechazo(a);
+    setDetalleId(null);
   }
 
   return (
@@ -194,64 +303,19 @@ export function TablaAbogados({
                   <TableCell className="py-3 text-muted-foreground">{formatearFecha(a.fecha_alta)}</TableCell>
                   <TableCell className="py-3 text-right">
                     <div className="inline-flex items-center gap-0.5 rounded-lg border p-1">
-                      {cargando ? (
-                        <Loader2 className="mx-2 size-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <>
-                          {a.estado === "pendiente" && (
-                            <>
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                title="Aprobar"
-                                onClick={() => ejecutar(a.id, () => aprobarAbogado(a.id))}
-                              >
-                                <Check className="size-4 text-emerald-600" />
-                              </Button>
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                title="Rechazar"
-                                onClick={() => {
-                                  setMotivo("");
-                                  setDialogoRechazo(a);
-                                }}
-                              >
-                                <X className="size-4 text-destructive" />
-                              </Button>
-                            </>
-                          )}
-                          {a.estado === "aprobado" && (
-                            <>
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                title="Restablecer contraseña"
-                                onClick={() => ejecutar(a.id, () => resetearPasswordAbogado(a.email))}
-                              >
-                                <KeyRound className="size-4" />
-                              </Button>
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                title="Suspender"
-                                onClick={() => ejecutar(a.id, () => suspenderAbogado(a.id))}
-                              >
-                                <UserX className="size-4 text-amber-600" />
-                              </Button>
-                            </>
-                          )}
-                          {a.estado === "inactivo" && (
-                            <Button
-                              size="icon-sm"
-                              variant="ghost"
-                              title="Reactivar"
-                              onClick={() => ejecutar(a.id, () => reactivarAbogado(a.id))}
-                            >
-                              <Check className="size-4 text-emerald-600" />
-                            </Button>
-                          )}
-                        </>
+                      <AccionesAbogado
+                        a={a}
+                        ocupado={cargando}
+                        onAprobar={(a) => ejecutar(a.id, () => aprobarAbogado(a.id))}
+                        onRechazar={alRechazar}
+                        onResetPassword={(a) => ejecutar(a.id, () => resetearPasswordAbogado(a.email))}
+                        onSuspender={(a) => ejecutar(a.id, () => suspenderAbogado(a.id))}
+                        onReactivar={(a) => ejecutar(a.id, () => reactivarAbogado(a.id))}
+                      />
+                      {!cargando && (
+                        <Button size="icon-sm" variant="ghost" title="Ver datos" onClick={() => setDetalleId(a.id)}>
+                          <Eye className="size-4" />
+                        </Button>
                       )}
                     </div>
                   </TableCell>
@@ -289,6 +353,114 @@ export function TablaAbogados({
               Confirmar rechazo
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!detalle} onOpenChange={(open) => !open && setDetalleId(null)}>
+        <DialogContent className="max-w-lg">
+          {detalle && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarFallback>{iniciales(detalle.nombre_completo)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <DialogTitle>{detalle.nombre_completo}</DialogTitle>
+                    <Badge className={ESTILO_ESTADO[detalle.estado]}>{detalle.estado}</Badge>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="grid gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+                  <span>{detalle.email}</span>
+                  <span>{detalle.telefono}</span>
+                  <span>DNI: {detalle.dni ?? "—"}</span>
+                  <span>Alta: {formatearFecha(detalle.fecha_alta)}</span>
+                </div>
+
+                <div className="grid gap-1">
+                  <p className="text-xs font-medium text-muted-foreground">Domicilio</p>
+                  <p className="rounded-lg border bg-muted/30 p-3">{domicilioCompleto(detalle)}</p>
+                  {detalle.codigo_postal && (
+                    <p className="text-xs text-muted-foreground">CP {detalle.codigo_postal}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1">
+                    <p className="text-xs font-medium text-muted-foreground">Matrícula federal</p>
+                    <p>{detalle.matricula_federal ?? "—"}</p>
+                  </div>
+                  <div className="grid gap-1">
+                    <p className="text-xs font-medium text-muted-foreground">Matrícula provincial</p>
+                    <p>{detalle.matricula_provincial ?? "—"}</p>
+                  </div>
+                  <div className="grid gap-1">
+                    <p className="text-xs font-medium text-muted-foreground">Años de experiencia</p>
+                    <p>{detalle.anios_experiencia ?? "—"}</p>
+                  </div>
+                </div>
+
+                {detalle.especialidades.length > 0 && (
+                  <div className="grid gap-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">Especialidades</p>
+                    <div className="flex flex-wrap gap-1">
+                      {detalle.especialidades.map((e) => (
+                        <Badge key={e} variant="secondary">
+                          {e}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {detalle.motivacion && (
+                  <div className="grid gap-1">
+                    <p className="text-xs font-medium text-muted-foreground">Motivación</p>
+                    <p className="rounded-lg border bg-muted/30 p-3">{detalle.motivacion}</p>
+                  </div>
+                )}
+
+                {detalle.declaracion_jurada_pdf_url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-fit"
+                    onClick={() => descargarDj(detalle.declaracion_jurada_pdf_url!)}
+                  >
+                    <Download className="size-3.5" />
+                    Declaración jurada (PDF)
+                  </Button>
+                )}
+
+                {detalle.estado === "rechazado" && detalle.motivo_rechazo && (
+                  <div className="grid gap-1">
+                    <p className="text-xs font-medium text-muted-foreground">Motivo de rechazo</p>
+                    <p className="rounded-lg border bg-destructive/10 p-3 text-destructive">
+                      {detalle.motivo_rechazo}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {detalle.estado !== "rechazado" && (
+                <DialogFooter>
+                  <AccionesAbogado
+                    a={detalle}
+                    ocupado={enAccion === detalle.id}
+                    expandido
+                    onAprobar={(a) => ejecutar(a.id, () => aprobarAbogado(a.id))}
+                    onRechazar={alRechazar}
+                    onResetPassword={(a) => ejecutar(a.id, () => resetearPasswordAbogado(a.email))}
+                    onSuspender={(a) => ejecutar(a.id, () => suspenderAbogado(a.id))}
+                    onReactivar={(a) => ejecutar(a.id, () => reactivarAbogado(a.id))}
+                  />
+                </DialogFooter>
+              )}
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
