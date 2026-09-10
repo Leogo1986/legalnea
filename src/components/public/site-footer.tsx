@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { MessageCircle, Phone, Mail } from "lucide-react";
 import {
-  ADMIN_EMAIL,
+  CONTACTO_EMAIL,
   CONTACTO_TELEFONO_DISPLAY,
   CONTACTO_WHATSAPP_URL,
   SITE_NAME,
@@ -39,20 +38,25 @@ export function SiteFooter() {
             {CONTACTO_TELEFONO_DISPLAY}
           </a>
           <a
-            href={`mailto:${ADMIN_EMAIL}`}
+            href={`mailto:${CONTACTO_EMAIL}`}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
           >
             <Mail className="size-4" />
-            {ADMIN_EMAIL}
+            {CONTACTO_EMAIL}
           </a>
         </div>
       </div>
 
       <div className="border-t px-4 py-4 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} {SITE_NAME} — Legal Nea, Corrientes.{" "}
-        <Link href="/login" className="underline underline-offset-2">
-          Acceso interno
-        </Link>
+        © {new Date().getFullYear()} {SITE_NAME} — Desarrollado por{" "}
+        <a
+          href="https://web.bitsinformatica.com.ar/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2"
+        >
+          BIT Informática
+        </a>
       </div>
     </footer>
   );

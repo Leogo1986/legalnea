@@ -9,7 +9,7 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactNode } from "react";
-import { ADMIN_EMAIL, CONTACTO_TELEFONO_DISPLAY, SITE_NAME } from "@/lib/constants";
+import { CONTACTO_EMAIL, CONTACTO_TELEFONO_DISPLAY, SITE_NAME } from "@/lib/constants";
 
 export function EmailLayout({
   preview,
@@ -36,7 +36,7 @@ export function EmailLayout({
             <Text style={estilos.footer}>
               Legal Nea · Corrientes, Argentina
               <br />
-              Contacto: {CONTACTO_TELEFONO_DISPLAY} · {ADMIN_EMAIL}
+              Contacto: {CONTACTO_TELEFONO_DISPLAY} · {CONTACTO_EMAIL}
             </Text>
           </Section>
         </Container>

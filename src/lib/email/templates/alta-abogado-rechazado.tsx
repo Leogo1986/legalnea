@@ -1,6 +1,6 @@
 import { Heading, Text } from "@react-email/components";
 import { EmailLayout } from "./layout";
-import { ADMIN_EMAIL } from "@/lib/constants";
+import { CONTACTO_EMAIL } from "@/lib/constants";
 
 export function AltaAbogadoRechazadoEmail({
   nombreCompleto,
@@ -27,7 +27,7 @@ export function AltaAbogadoRechazadoEmail({
       <Text>
         Valoramos mucho tu voluntad de donar tu tiempo profesional. Si
         considerás que hubo un error o querés más información, podés
-        escribirnos a {ADMIN_EMAIL}.
+        escribirnos a {CONTACTO_EMAIL}.
       </Text>
     </EmailLayout>
   );
