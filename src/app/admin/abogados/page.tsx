@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/require-role";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { TablaAbogados, type AbogadoAdmin } from "@/components/admin/tabla-abogados";
 import { getSiteUrl } from "@/lib/site-url";
 import type { EstadoAbogado } from "@/types/database";
@@ -18,7 +19,12 @@ export default async function AdminAbogadosPage({
     ? (estado as EstadoAbogado)
     : null;
 
-  const supabase = await createClient();
+  // Los datos personales de los abogados (email, teléfono, DNI, domicilio,
+  // matrículas) ya no son legibles con la sesión (migración 0007): se leen
+  // con service role, y por eso el rol se verifica acá mismo, sin depender
+  // solo del layout.
+  await requireRole("admin");
+  const supabase = createAdminClient();
   let query = supabase
     .from("abogados")
     .select(

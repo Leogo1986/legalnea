@@ -56,31 +56,6 @@ export async function agregarAdjuntoPropio(formData: FormData): Promise<Resultad
   return { success: true };
 }
 
-export async function enviarMensajeCliente(
-  solicitudId: string,
-  contenido: string
-): Promise<ResultadoAccion> {
-  const { user } = await requireRole("cliente");
-
-  if (!contenido.trim()) return { success: false, error: "Escribí un mensaje." };
-  if (!(await verificarPropiaSolicitud(solicitudId, user.id))) {
-    return { success: false, error: "Esa solicitud no te pertenece." };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.from("mensajes").insert({
-    solicitud_id: solicitudId,
-    autor_id: user.id,
-    autor_rol: "cliente",
-    contenido: contenido.trim(),
-  });
-
-  if (error) return { success: false, error: "No pudimos enviar el mensaje." };
-
-  revalidatePath(`/cliente/solicitudes/${solicitudId}`);
-  return { success: true };
-}
-
 export async function obtenerUrlFirmadaCliente(
   rutaStorage: string
 ): Promise<{ url: string | null }> {

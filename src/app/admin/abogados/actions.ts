@@ -107,16 +107,33 @@ export async function rechazarAbogado(
   return { success: true };
 }
 
+// Suspender corta el acceso de verdad: además del estado (que la RLS ya usa
+// para ocultarle los casos), se banea la cuenta de Auth para que no pueda
+// volver a loguearse ni refrescar la sesión.
+const BAN_INDEFINIDO = "876000h"; // ~100 años
+
 export async function suspenderAbogado(abogadoId: string): Promise<ResultadoAccion> {
   const { user } = await requireRole("admin");
   const admin = createAdminClient();
 
-  const { error } = await admin
+  const { data: abogado, error } = await admin
     .from("abogados")
     .update({ estado: "inactivo" })
-    .eq("id", abogadoId);
+    .eq("id", abogadoId)
+    .select("user_id")
+    .single();
 
-  if (error) return { success: false, error: "No pudimos suspender al abogado." };
+  if (error || !abogado) return { success: false, error: "No pudimos suspender al abogado." };
+
+  if (abogado.user_id) {
+    const { error: errorBan } = await admin.auth.admin.updateUserById(abogado.user_id, {
+      ban_duration: BAN_INDEFINIDO,
+    });
+    if (errorBan) {
+      console.error("[suspenderAbogado] no se pudo banear la cuenta", errorBan.code);
+      return { success: false, error: "Quedó suspendido, pero no pudimos bloquear su acceso. Reintentá." };
+    }
+  }
 
   await admin.from("logs_auditoria").insert({
     usuario_id: user.id,
@@ -134,10 +151,36 @@ export async function reactivarAbogado(abogadoId: string): Promise<ResultadoAcci
   const { user } = await requireRole("admin");
   const admin = createAdminClient();
 
+  // Solo se reactiva a un suspendido: un pendiente o rechazado no puede
+  // saltar a "aprobado" sin pasar por aprobarAbogado (que crea la cuenta).
+  const { data: abogado } = await admin
+    .from("abogados")
+    .select("estado, user_id")
+    .eq("id", abogadoId)
+    .maybeSingle();
+
+  if (!abogado) return { success: false, error: "Abogado no encontrado." };
+  if (abogado.estado !== "inactivo") {
+    return { success: false, error: "Solo se puede reactivar a un abogado suspendido." };
+  }
+
+  // Primero se desbloquea la cuenta: si falla, el estado sigue "inactivo" y
+  // el admin puede reintentar.
+  if (abogado.user_id) {
+    const { error: errorUnban } = await admin.auth.admin.updateUserById(abogado.user_id, {
+      ban_duration: "none",
+    });
+    if (errorUnban) {
+      console.error("[reactivarAbogado] no se pudo desbloquear la cuenta", errorUnban.code);
+      return { success: false, error: "No pudimos desbloquear su acceso. Reintentá." };
+    }
+  }
+
   const { error } = await admin
     .from("abogados")
     .update({ estado: "aprobado" })
-    .eq("id", abogadoId);
+    .eq("id", abogadoId)
+    .eq("estado", "inactivo");
 
   if (error) return { success: false, error: "No pudimos reactivar al abogado." };
 

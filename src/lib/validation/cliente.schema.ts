@@ -30,8 +30,8 @@ export const clienteAltaSchema = z.object({
   altura: alturaSchema,
   piso: pisoDptoSchema,
   dpto: pisoDptoSchema,
-  provincia: z.string().trim().min(2, "Seleccioná o ingresá tu provincia"),
-  localidad: z.string().trim().min(2, "Ingresá tu localidad"),
+  provincia: z.string().trim().min(2, "Seleccioná o ingresá tu provincia").max(100),
+  localidad: z.string().trim().min(2, "Ingresá tu localidad").max(100),
   motivo_consulta: z
     .string()
     .trim()

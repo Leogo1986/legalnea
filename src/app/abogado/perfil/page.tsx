@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth/require-role";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PerfilAbogadoForm } from "@/components/abogado/perfil-abogado-form";
 import { CambiarPasswordForm } from "@/components/shared/cambiar-password-form";
 import { AvatarUpload } from "@/components/shared/avatar-upload";
@@ -24,7 +24,10 @@ const BORDE_ESTADO: Record<string, string> = {
 
 export default async function PerfilAbogadoPage() {
   const { user, perfil } = await requireRole("abogado");
-  const supabase = await createClient();
+  // Service role porque las columnas personales de `abogados` ya no se
+  // pueden leer con la sesión (migración 0007). Se filtra por el user.id que
+  // devolvió requireRole: solo trae la ficha propia.
+  const supabase = createAdminClient();
 
   const { data: abogado } = await supabase
     .from("abogados")
